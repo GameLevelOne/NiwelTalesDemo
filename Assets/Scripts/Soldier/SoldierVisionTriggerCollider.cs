@@ -12,6 +12,11 @@ public class SoldierVisionTriggerCollider : SoldierBaseTriggerCollider {
 		Trigger(other.tag);
 	}
 
+	protected void OnTriggerExit2D(Collider2D other)
+	{
+
+	}
+
 	protected void Trigger (string otherTag)
 	{
 		soldier.DetectObject(otherTag,longVision);
