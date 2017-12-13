@@ -172,7 +172,7 @@ public class Soldier : MonoBehaviour {
 	#region public modules
 	public void DetectObject(string tag, bool longVision)
 	{
-		if(tag == Tags.NIWEL){
+		if(tag == Tags.MAINCHAR){
 			if(!longVision) SetSoldierState(SoldierState.Startled);
 		}else if(tag == Tags.MONSTER){
 			if(!longVision)	SetSoldierState(SoldierState.Panic);
