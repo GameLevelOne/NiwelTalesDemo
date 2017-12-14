@@ -9,11 +9,13 @@ public static class Tags {
 	public const string LEFT_PUSHABLE = "LeftPushable";
 	public const string RIGHT_PUSHABLE = "RightPushable";
 	public const string HIDEABLE = "Hideable";
-	public const string FOOD = "Food";
 
 	public const string SOLDIER = "Soldier";
 	public const string MONSTER = "Monster";
 
 	public const string WAYPOINT = "Waypoint";
+
+	public const string OPENABLE = "Openable";
+
 	public const string RANDOM_TARGET = "RandomTarget";
 }
