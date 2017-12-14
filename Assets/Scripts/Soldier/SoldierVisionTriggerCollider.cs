@@ -11,13 +11,18 @@ public class SoldierVisionTriggerCollider : MonoBehaviour {
 
 	protected void OnTriggerEnter2D(Collider2D other)
 	{
-		 if(!longVision){
-			Trigger(other.gameObject);
-		}
+		Trigger(other.gameObject);
 	}
 
 	protected void Trigger (GameObject otherObj)
 	{
-		soldier.DetectObject(otherObj,longVision);
+		if(otherObj.tag == Tags.MONSTER){
+			soldier.DetectObject(otherObj,longVision);
+		}else{
+			if(!longVision){
+				soldier.DetectObject(otherObj,longVision);
+			}
+		}
+
 	}
 }
