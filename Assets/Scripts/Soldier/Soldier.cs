@@ -148,6 +148,7 @@ public class Soldier : MonoBehaviour {
 		
 		if(!flagInvestigate){
 			print("Soldier is Investigating");
+			niwelTarget = null;
 			flagInvestigate = true;
 			targetHidingPlace = getNearestHidingPlace();
 		}else{
@@ -220,7 +221,7 @@ public class Soldier : MonoBehaviour {
 	{
 		if(otherObj.tag == Tags.MAINCHAR){
 			niwelTarget = otherObj;
-			if(!longVision && (soldierState != SoldierState.Startled && soldierState != SoldierState.Chase)) SetSoldierState(SoldierState.Startled);
+			if(!longVision && (soldierState != SoldierState.Startled && soldierState != SoldierState.Chase && soldierState != SoldierState.Panic)) SetSoldierState(SoldierState.Startled);
 		}else if(otherObj.tag == Tags.MONSTER){
 			if(!longVision)	SetSoldierState(SoldierState.Panic);
 		}
