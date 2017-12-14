@@ -1,5 +1,7 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public enum SoldierState{
 	Idle,
@@ -7,6 +9,7 @@ public enum SoldierState{
 	Startled,
 	Chase,
 	Panic,
+	Investigate
 }
 
 public enum SoldierAnimationState{
@@ -42,13 +45,16 @@ public class Soldier : MonoBehaviour {
 
 	[Header("Do Not Modify")]
 	public SoldierState soldierState = SoldierState.Idle;
-	public GameObject niwelTarget;
+	public List<GameObject> hidingPlace = new List<GameObject>();
+	[SerializeField] GameObject targetHidingPlace;
+	[SerializeField] GameObject niwelTarget;
 	public int currentWaypoint = 0;
 
 	public bool flagIdle = false;
 	public bool flagStartled = false;
 	public bool flagChase = false;
 	public bool flagPanic = false;
+	public bool flagInvestigate = false;
 
 	Vector3 vLeft = new Vector3(-1f,1f,1f);
 	Vector3 vRight = Vector3.one;
@@ -73,8 +79,9 @@ public class Soldier : MonoBehaviour {
 	#region mechanics
 	void Patrol()
 	{
+		print("Soldier is Patrolling");
 		SetAnimation(SoldierAnimationState.Walk);
-		MoveToWaypoint(waypoints[currentWaypoint]);
+		MoveToTarget(waypoints[currentWaypoint]);
 		if(IsArrived(waypoints[currentWaypoint])){
 			if(!flagIdle){	
 				flagIdle = true;
@@ -83,7 +90,7 @@ public class Soldier : MonoBehaviour {
 		}
 	}
 
-	void MoveToWaypoint(Transform target)
+	void MoveToTarget(Transform target)
 	{
 		SetDirection(target);
 		transform.position = Vector3.MoveTowards(transform.position,target.position,Time.deltaTime*speed);
@@ -102,7 +109,7 @@ public class Soldier : MonoBehaviour {
 	{
 		float xScaleSelf = transform.localScale.x;
 		float xTarget= target.position.x;
-		if((xScaleSelf == -1f && transform.position.x <= target.position.x) || (xScaleSelf == 1f && transform.position.x >= target.position.x)){
+		if((xScaleSelf == -1f && transform.position.x <= target.position.x+0.05f) || (xScaleSelf == 1f && transform.position.x >= target.position.x-0.05f)){
 			return true;
 		}else{
 			return false;
@@ -123,16 +130,61 @@ public class Soldier : MonoBehaviour {
 
 	void Chase()
 	{
-		print("Soldier is chasing Niwel");
-
+		MoveToTarget(niwelTarget.transform);
 	}
 
 	void Panic()
 	{
-		if(soldierState != SoldierState.Panic){
+		if(!flagPanic){
+			flagPanic = true;
 			print("Soldier is panicked");
 			SetSoldierState(SoldierState.Panic);
 			SetAnimation(SoldierAnimationState.Panic);
+		}
+	}
+
+	void Investigate()
+	{
+		
+		if(!flagInvestigate){
+			print("Soldier is Investigating");
+			flagInvestigate = true;
+			targetHidingPlace = getNearestHidingPlace();
+		}else{
+			if(targetHidingPlace != null)
+			{
+				MoveToTarget(targetHidingPlace.transform);
+				if(IsArrived(targetHidingPlace.transform)){
+					flagInvestigate = false;
+					flagIdle = true;
+					StartCoroutine(Idling());
+					
+				}
+			}
+		}
+
+	}
+
+	GameObject getNearestHidingPlace()
+	{
+		if(hidingPlace.Count == 0) return null;
+		else if(hidingPlace.Count == 1){
+			return hidingPlace[0];
+		}else{
+			Vector2 Soldier2DPos = new Vector2(transform.position.x,transform.position.y);
+			Vector2 hidingPlace2DPos = new Vector2(hidingPlace[0].transform.position.x,hidingPlace[0].transform.position.y);
+			int targetIndex = 0;
+			float currentNearestDistance = Vector2.Distance(Soldier2DPos,hidingPlace2DPos);
+
+			for(int i = 1; i<hidingPlace.Count;i++){
+				hidingPlace2DPos = new Vector2(hidingPlace[i].transform.position.x,hidingPlace[i].transform.position.y);
+				if(Vector2.Distance(Soldier2DPos,hidingPlace2DPos) < currentNearestDistance){
+					targetIndex = i;
+					currentNearestDistance = Vector2.Distance(Soldier2DPos,hidingPlace2DPos);
+				}
+			}
+
+			return hidingPlace[targetIndex];
 		}
 	}
 
@@ -141,7 +193,7 @@ public class Soldier : MonoBehaviour {
 	{
 		//tembak dor dor
 		print("Dor");
-		float randomAngle = Random.Range(-1*bulletRotationZ,bulletRotationZ);
+		float randomAngle = UnityEngine.Random.Range(-1*bulletRotationZ,bulletRotationZ);
 		float x = transform.localScale.x == 1f ? bulletXStartRight : bulletXStartLeft;
 		Vector3 bulletPos = new Vector3(transform.position.x+x,bulletY,0f);
 		Vector3 bulletRot = new Vector3(0,0,randomAngle);
@@ -161,24 +213,25 @@ public class Soldier : MonoBehaviour {
 	{
 		thisAnim.SetInteger("State",(int)state);
 	}
-
-	Vector3 getDirection()
-	{
-		float direction = transform.position.x > waypoints[currentWaypoint].position.x ? 1f : -1f;
-		return new Vector3(direction * speed, 0f,0f);	
-	}
 	#endregion
 //-------------------------------------------------------------------------------------------------------------------------------------------------
 	#region public modules
-	public void DetectObject(string tag, bool longVision)
+	public void DetectObject(GameObject otherObj, bool longVision)
 	{
-		if(tag == Tags.MAINCHAR){
-			if(!longVision) SetSoldierState(SoldierState.Startled);
-		}else if(tag == Tags.MONSTER){
+		if(otherObj.tag == Tags.MAINCHAR){
+			niwelTarget = otherObj;
+			if(!longVision && (soldierState != SoldierState.Startled && soldierState != SoldierState.Chase)) SetSoldierState(SoldierState.Startled);
+		}else if(otherObj.tag == Tags.MONSTER){
 			if(!longVision)	SetSoldierState(SoldierState.Panic);
 		}
 	}
 
+	public void DetectHidingPlace(GameObject hidingPlaceObj)
+	{
+		if(soldierState != SoldierState.Investigate){
+			hidingPlace.Add(hidingPlaceObj);
+		}
+	}
 	#endregion
 //-------------------------------------------------------------------------------------------------------------------------------------------------	
 	void Update()
@@ -197,6 +250,8 @@ public class Soldier : MonoBehaviour {
 			}
 		}else if(soldierState == SoldierState.Panic){
 			Panic();
+		}else if(soldierState == SoldierState.Investigate){
+			Investigate();
 		}
 	}
 		
@@ -215,26 +270,20 @@ public class Soldier : MonoBehaviour {
 	IEnumerator ChasingNiwel()
 	{
 		flagChase = true;
-		SetSoldierState(SoldierState.Chase);
-		Chase();
+		SetAnimation(SoldierAnimationState.Walk);
+		print("Soldier is chasing niwel");
 		yield return new WaitForSeconds(chaseDuration);
-		print("Stop Chasing Niwel");
-		SetSoldierState(SoldierState.Patrol);
+		print("Soldier Stops Chasing Niwel");
 		flagChase = false;
+		SetSoldierState(SoldierState.Investigate);
 	}
 
 	IEnumerator Startling()
 	{
+		print("Soldier is startled");
 		yield return new WaitForSeconds(startleDuration);
 		SetSoldierState(SoldierState.Chase);
 		flagStartled = false;
 		StartCoroutine(ChasingNiwel());
-	}
-
-	IEnumerator Chasing()
-	{
-		yield return new WaitForSeconds(chaseDuration);
-		flagChase = false;
-		StartCoroutine(Idling());
 	}
 }
