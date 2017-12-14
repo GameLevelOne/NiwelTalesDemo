@@ -210,6 +210,13 @@ public class Soldier : MonoBehaviour {
 		tempBullet.transform.localScale = transform.localScale.x == 1f ? vRight : vLeft;
 		tempBullet.GetComponent<Bullet>().Init();
 	}
+
+	void OnSoldierDoneDiying()
+	{
+		print("Soldier is dead");
+		thisRigidbody.simulated = false;
+		thisCollider.enabled = false;
+	}
 	#endregion
 
 	void SetSoldierState(SoldierState state)
@@ -240,6 +247,13 @@ public class Soldier : MonoBehaviour {
 			hidingPlace.Add(hidingPlaceObj);
 		}
 	}
+
+	public void Die(Transform monsterTarget)
+	{
+		SetDirection(monsterTarget);
+		SetSoldierState(SoldierState.Die);
+		SetAnimation(SoldierAnimationState.Die);
+	}
 	#endregion
 //-------------------------------------------------------------------------------------------------------------------------------------------------	
 	void Update()
@@ -260,6 +274,8 @@ public class Soldier : MonoBehaviour {
 			Panic();
 		}else if(soldierState == SoldierState.Investigate){
 			Investigate();
+		}else if(soldierState == SoldierState.Die){
+			
 		}
 	}
 		
@@ -294,4 +310,5 @@ public class Soldier : MonoBehaviour {
 		flagStartled = false;
 		StartCoroutine(ChasingNiwel());
 	}
+
 }
