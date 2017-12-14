@@ -15,4 +15,7 @@ public static class Tags {
 	public const string MONSTER = "Monster";
 
 	public const string WAYPOINT = "Waypoint";
+
+	public const string OPENABLE = "Openable";
+	public const string DOOR = "Door";
 }
