@@ -9,7 +9,8 @@ public enum SoldierState{
 	Startled,
 	Chase,
 	Panic,
-	Investigate
+	Investigate,
+	Die
 }
 
 public enum SoldierAnimationState{
@@ -18,6 +19,7 @@ public enum SoldierAnimationState{
 	Startled,
 	CheckHidingPlace,
 	Panic,
+	Die
 }
 
 public class Soldier : MonoBehaviour {
@@ -107,9 +109,10 @@ public class Soldier : MonoBehaviour {
 
 	bool IsArrived(Transform target)
 	{
-		float xScaleSelf = transform.localScale.x;
+		Vector3 scaleSelf = transform.localScale;
 		float xTarget= target.position.x;
-		if((xScaleSelf == -1f && transform.position.x <= target.position.x+0.05f) || (xScaleSelf == 1f && transform.position.x >= target.position.x-0.05f)){
+		if( (scaleSelf == vLeft && transform.position.x <=xTarget + 0.05f) || 
+			(scaleSelf == vRight && transform.position.x >= xTarget - 0.05f)){
 			return true;
 		}else{
 			return false;
@@ -150,7 +153,7 @@ public class Soldier : MonoBehaviour {
 			print("Soldier is Investigating");
 			niwelTarget = null;
 			flagInvestigate = true;
-			targetHidingPlace = getNearestHidingPlace();
+			targetHidingPlace = GetNearestHidingPlace();
 		}else{
 			if(targetHidingPlace != null)
 			{
@@ -161,27 +164,31 @@ public class Soldier : MonoBehaviour {
 					StartCoroutine(Idling());
 					
 				}
+			}else{
+				flagInvestigate = false;
+				flagIdle = true;
+				StartCoroutine(Idling());
 			}
 		}
 
 	}
 
-	GameObject getNearestHidingPlace()
+	GameObject GetNearestHidingPlace()
 	{
 		if(hidingPlace.Count == 0) return null;
 		else if(hidingPlace.Count == 1){
 			return hidingPlace[0];
 		}else{
-			Vector2 Soldier2DPos = new Vector2(transform.position.x,transform.position.y);
+			Vector2 soldier2DPos = new Vector2(transform.position.x,transform.position.y);
 			Vector2 hidingPlace2DPos = new Vector2(hidingPlace[0].transform.position.x,hidingPlace[0].transform.position.y);
 			int targetIndex = 0;
-			float currentNearestDistance = Vector2.Distance(Soldier2DPos,hidingPlace2DPos);
+			float currentNearestDistance = Vector2.Distance(soldier2DPos,hidingPlace2DPos);
 
 			for(int i = 1; i<hidingPlace.Count;i++){
 				hidingPlace2DPos = new Vector2(hidingPlace[i].transform.position.x,hidingPlace[i].transform.position.y);
-				if(Vector2.Distance(Soldier2DPos,hidingPlace2DPos) < currentNearestDistance){
+				if(Vector2.Distance(soldier2DPos,hidingPlace2DPos) < currentNearestDistance){
 					targetIndex = i;
-					currentNearestDistance = Vector2.Distance(Soldier2DPos,hidingPlace2DPos);
+					currentNearestDistance = Vector2.Distance(soldier2DPos,hidingPlace2DPos);
 				}
 			}
 
@@ -223,7 +230,7 @@ public class Soldier : MonoBehaviour {
 			niwelTarget = otherObj;
 			if(!longVision && (soldierState != SoldierState.Startled && soldierState != SoldierState.Chase && soldierState != SoldierState.Panic)) SetSoldierState(SoldierState.Startled);
 		}else if(otherObj.tag == Tags.MONSTER){
-			if(!longVision)	SetSoldierState(SoldierState.Panic);
+			if(!longVision && (soldierState != SoldierState.Panic))	SetSoldierState(SoldierState.Panic);
 		}
 	}
 
