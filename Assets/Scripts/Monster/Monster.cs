@@ -17,6 +17,7 @@ public enum MonsterAnimationState
 {
 	Idle,
 	Walk,
+	Run,
 	Eat,
 	CheckHidingPlace
 }
@@ -123,7 +124,7 @@ public class Monster : MonoBehaviour {
 
 	void Chase()
 	{
-		SetAnimation(MonsterAnimationState.Walk);
+		SetAnimation(MonsterAnimationState.Run);
 		MoveToTarget(targetObj.transform);
 		if(IsNearbyTarget(targetObj.transform)){
 			SetMonsterState(MonsterState.Eat);
@@ -136,8 +137,10 @@ public class Monster : MonoBehaviour {
 			flagEat = true;
 			if(targetObj.tag == Tags.MAINCHAR){
 				//kill Niwel
+				//game over 
 			}else if(targetObj.tag == Tags.SOLDIER){
 				//kill Soldier
+				targetObj.GetComponent<Soldier>().Die(transform);
 			}
 		}
 	}
