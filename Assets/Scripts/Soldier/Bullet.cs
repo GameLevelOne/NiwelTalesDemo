@@ -15,7 +15,7 @@ public class Bullet : MonoBehaviour {
 
 	void OnCollisionEnter2D(Collision2D other){
 		
-		print("GameObject: "+other.gameObject.name);
+//		print("GameObject: "+other.gameObject.name);
 		if(other.gameObject.tag == Tags.MONSTER){
 			other.transform.parent.GetComponent<Monster>().DetectObjects(soldierObj);
 			go = false;
@@ -26,7 +26,8 @@ public class Bullet : MonoBehaviour {
 	{
 		while(go)
 		{
-			transform.Translate(bulletForce * transform.localScale.x,0,0);
+			float direction = transform.localScale.x < 0f ? 1f : -1f;
+			transform.Translate(bulletForce * direction,0,0);
 			yield return null;
 		}
 		Destroy(gameObject);
@@ -34,7 +35,7 @@ public class Bullet : MonoBehaviour {
 
 	IEnumerator Destroy()
 	{
-		print("DESTROYED CALLED");
+//		print("DESTROYED CALLED");
 		yield return new WaitForSeconds(5f);
 		Destroy(gameObject);
 	}

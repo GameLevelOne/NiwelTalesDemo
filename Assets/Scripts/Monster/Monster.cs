@@ -171,6 +171,7 @@ public class Monster : MonoBehaviour {
 	void Attack()
 	{
 		if(!flagAttack){
+			flagInvestigate = false;
 			flagAttack = true;
 			SetAnimation(MonsterAnimationState.Attack);
 			if(targetObj.tag == Tags.MAINCHAR){
@@ -178,6 +179,7 @@ public class Monster : MonoBehaviour {
 				//game over 
 			}else if(targetObj.tag == Tags.SOLDIER){
 				//kill Soldier
+				print("KILL SOLDIER");
 				targetObj.GetComponent<Soldier>().SetSoldierState(SoldierState.Die);
 			}
 			timer = attackDuration;
@@ -186,6 +188,7 @@ public class Monster : MonoBehaviour {
 			if(timer <= 0){
 				timer = 0;
 				flagAttack = false;
+				targetObj = null;
 				SetMonsterState(MonsterState.Idle);
 			}
 		}

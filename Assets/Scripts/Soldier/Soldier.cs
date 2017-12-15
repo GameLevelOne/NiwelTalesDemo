@@ -40,6 +40,7 @@ public class Soldier : MonoBehaviour {
 	public float startleDuration = 3f;
 	public float chaseDuration = 10f;
 	public float panicDuration = 10f;
+	public Vector2 niwelGrabOffset = new Vector2(-3f,-4.2f);
 
 	[Header("Bullet Settings")]
 	public float bulletXStartLeft = -0.34f;
@@ -75,8 +76,8 @@ public class Soldier : MonoBehaviour {
 
 	public void Init()
 	{
-		vLeft = new Vector3(transform.localScale.x * -1f,transform.localScale.y,transform.localScale.z);
-		vRight = transform.localScale;
+		vLeft = transform.localScale;
+		vRight = new Vector3(transform.localScale.x * -1f,transform.localScale.y,transform.localScale.z);
 		SetSoldierState(SoldierState.Patrol);
 		thisAnim.SetInteger("State",(int)soldierState);
 	}
@@ -185,6 +186,12 @@ public class Soldier : MonoBehaviour {
 		if(!flagGrabNiwel){
 			flagGrabNiwel = true;
 			SetAnimation(SoldierAnimationState.GrabNiwel);
+			niwelTarget.transform.position = 
+				new Vector3(
+					transform.position.x+niwelGrabOffset.x,
+					transform.position.y+niwelGrabOffset.y,
+					niwelTarget.transform.position.z
+				);
 		}
 	}
 
@@ -198,6 +205,7 @@ public class Soldier : MonoBehaviour {
 
 	void Die()
 	{
+		print("DIE");
 		if(!flagDie){
 			flagPanic = false;
 			flagDie = true;
@@ -209,7 +217,6 @@ public class Soldier : MonoBehaviour {
 
 	void Investigate()
 	{
-		
 		if(!flagInvestigate){
 			print("Soldier is Investigating");
 			niwelTarget = null;
@@ -255,17 +262,20 @@ public class Soldier : MonoBehaviour {
 	}
 
 	#region AnimationEvent
-	void Shoot()
+	public void Shoot()
 	{
 		//tembak dor dor
-		print("Dor");
+//		print("Dor");
 		float randomAngle = UnityEngine.Random.Range(-1*bulletRotationZ,bulletRotationZ);
 		float x = transform.localScale.x == 1f ? bulletXStartRight : bulletXStartLeft;
 		Vector3 bulletPosision = new Vector3(transform.position.x+x,bulletY,0f);
 		Vector3 bulletRotation = new Vector3(0,0,randomAngle);
 
 		GameObject tempBullet = Instantiate(bulletObject,bulletPosision,Quaternion.Euler(bulletRotation));
-		tempBullet.transform.localScale = transform.localScale.x == 1f ? vRight : vLeft;
+		tempBullet.transform.localScale = 
+			transform.localScale.x == 1f ? 
+			tempBullet.transform.localScale : 
+			new Vector3(tempBullet.transform.localScale.x * -1f,tempBullet.transform.localScale.y,tempBullet.transform.localScale.z);
 		tempBullet.GetComponent<Bullet>().Init(gameObject);
 	}
 
@@ -284,6 +294,7 @@ public class Soldier : MonoBehaviour {
 
 	void SetAnimation(SoldierAnimationState state)
 	{
+		flagGrabNiwel = false;
 		thisAnim.SetInteger("State",(int)state);
 	}
 	#endregion
