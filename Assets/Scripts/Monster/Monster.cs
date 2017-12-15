@@ -10,7 +10,7 @@ public enum MonsterState
 	Investigate,
 	CheckHidingPlace,
 	Chase,
-	Eat
+	Attack
 }
 
 public enum MonsterAnimationState
@@ -18,7 +18,7 @@ public enum MonsterAnimationState
 	Idle,
 	Walk,
 	Run,
-	Eat,
+	Attack,
 	CheckHidingPlace
 }
 
@@ -34,24 +34,27 @@ public class Monster : MonoBehaviour {
 	public float speed = 1.5f;
 	public float monsterAppearDuration = 10f;
 	public float idleDuration = 2f;
-	public float eatDuration = 5f;
+	public float attackDuration = 5f;
 	public float checkHidingPlaceDuration = 2f;
-	public float targetNearbyDistanceBeforeAttacking = 0.1f;
+	public float targetNearbyDistanceBeforeAttacking = 5f;
 
 
 	[Header("Do Not Modify")]
 	public List<GameObject> hidingPlace = new List<GameObject>();
 	[SerializeField] GameObject targetObj;
 	[SerializeField] GameObject targetHidingPlace;
-
+	public Vector3 vLeft, vRight;
+	public bool flagInit = false;
+	public bool flagMonsterTimer;
+	public bool flagIdle = false;
 	public bool flagInvestigate = false;
 	public bool flagCheckHidingPlace = false;
 	public bool flagChase = false;
-	public bool flagEat = false;
+	public bool flagAttack = false;
 
 
 	Vector3 currentViewDirection;
-	Vector3 vLeft, vRight;
+
 	float timer;
 	#endregion
 //-------------------------------------------------------------------------------------------------------------------------------------------------
@@ -61,20 +64,51 @@ public class Monster : MonoBehaviour {
 	/// </summary>
 	public void Init(bool facingRight)
 	{
+		SetMonsterState(MonsterState.Investigate);
 		vLeft = transform.localScale;
 		vRight = new Vector3(transform.localScale.x * -1f,transform.localScale.y,transform.localScale.z);
 
-		SetMonsterState(MonsterState.Idle);
+		SetViewDirection(facingRight);
+
+		flagMonsterTimer = true;
 		StartCoroutine(Appearing());
+	}
+
+	void SetViewDirection(bool facingRight)
+	{
+		if(facingRight){
+			transform.localScale = vRight;
+		}else{
+			transform.localScale = vLeft;
+		}
 	}
 	#endregion
 //-------------------------------------------------------------------------------------------------------------------------------------------------
 	#region mechanics
+
+	#region main behavior
+	void Idle()
+	{
+		if(!flagIdle){
+			hidingPlace.Clear();
+			flagIdle = true;
+			timer = idleDuration;
+			SetAnimation(MonsterAnimationState.Idle);
+		}else if(flagIdle){
+			timer -= Time.deltaTime;
+			if(timer <= 0f){
+				flagIdle = false;
+				MoveToNextSpot();
+			}
+		}
+	}
+
 	void Patrol()
 	{
 		SetAnimation(MonsterAnimationState.Walk);
 		MoveToTarget(targetObj.transform);
 		if(IsArrived(targetObj.transform) && targetObj.tag == Tags.RANDOM_TARGET){
+			Destroy(targetObj);
 			SetMonsterState(MonsterState.Investigate);
 		}
 	}
@@ -88,16 +122,67 @@ public class Monster : MonoBehaviour {
 		}else{
 			if(targetHidingPlace != null)
 			{
+				SetAnimation(MonsterAnimationState.Walk);
 				MoveToTarget(targetHidingPlace.transform);
 				if(IsArrived(targetHidingPlace.transform)){
+					flagInvestigate = false;
 					SetMonsterState(MonsterState.CheckHidingPlace);
 				}
 			}else{
-				StartCoroutine(Idling());
+				flagInvestigate = false;
+				SetMonsterState(MonsterState.Idle);
 			}
 		}
 	}
 
+	void CheckHidingPlace()
+	{
+		if(!flagCheckHidingPlace){
+			flagCheckHidingPlace = true;
+			SetAnimation(MonsterAnimationState.CheckHidingPlace);
+			timer = checkHidingPlaceDuration;
+		}else if(flagCheckHidingPlace){
+			timer -= Time.deltaTime;
+			if(timer <= 0){
+				flagCheckHidingPlace = false;
+				SetMonsterState(MonsterState.Idle);
+			}
+		}
+	}
+
+	void Chase()
+	{
+		SetAnimation(MonsterAnimationState.Run);
+		MoveToTarget(targetObj.transform);
+		if(IsNearbyTarget(targetObj.transform)){
+			SetMonsterState(MonsterState.Attack);
+			Attack();
+		}
+	}
+
+	void Attack()
+	{
+		if(!flagAttack){
+			flagAttack = true;
+			SetAnimation(MonsterAnimationState.Attack);
+			if(targetObj.tag == Tags.MAINCHAR){
+				//kill Niwel
+				//game over 
+			}else if(targetObj.tag == Tags.SOLDIER){
+				//kill Soldier
+				targetObj.GetComponent<Soldier>().SetSoldierState(SoldierState.Die);
+			}
+			timer = attackDuration;
+		}else if(flagAttack){
+			timer -= Time.deltaTime;
+			if(timer <= 0){
+				timer = 0;
+				flagAttack = false;
+				SetMonsterState(MonsterState.Idle);
+			}
+		}
+	}
+	#endregion
 	GameObject GetNearestHidingPlace()
 	{
 		if(hidingPlace.Count == 0) return null;
@@ -105,22 +190,29 @@ public class Monster : MonoBehaviour {
 			if(IsInFront(hidingPlace[0].transform)) return hidingPlace[0];
 			else return null;
 		}else{
-			List<int> indexes = new List<int>();
+			//			List<int> indexes = new List<int>();
+
+			int targetIndex = -1;
+			Vector2 monster2DPos = new Vector2(transform.position.x,transform.position.y);
+			float currentNearestDistance = 0f;
 
 			for(int i = 0;i<hidingPlace.Count;i++){
 				if(IsInFront(hidingPlace[i].transform)){
-					indexes.Add(i);
+					Vector2 hidingPlace2DPos = new Vector2(hidingPlace[i].transform.position.x,hidingPlace[i].transform.position.y);
+					if(targetIndex == -1){
+						currentNearestDistance = Vector2.Distance(monster2DPos,hidingPlace2DPos);
+						targetIndex = i;
+					}else{
+						if(Vector2.Distance(monster2DPos,hidingPlace2DPos) < currentNearestDistance){
+							currentNearestDistance = Vector2.Distance(monster2DPos,hidingPlace2DPos);
+							targetIndex = i;
+						}
+					}
 				}
 			}
 
-			if(indexes.Count == 0){
-				return null;
-			}else if(indexes.Count == 1){
-				return hidingPlace[indexes[0]];
-			}else{
-				int targetIndex = UnityEngine.Random.Range(0,indexes.Count);
-				return hidingPlace[indexes[targetIndex]];
-			}
+			if(targetIndex == -1) return null;
+			else return hidingPlace[targetIndex];
 		}
 	}
 
@@ -132,50 +224,11 @@ public class Monster : MonoBehaviour {
 		else return false;
 	}
 
-	void CheckHidingPlace()
-	{
-		if(!flagCheckHidingPlace){
-			flagCheckHidingPlace = true;
-			SetAnimation(MonsterAnimationState.CheckHidingPlace);
-			StartCoroutine(CheckingHidingPlace());
-		}
-	}
-
-	void Chase()
-	{
-		SetAnimation(MonsterAnimationState.Run);
-		MoveToTarget(targetObj.transform);
-		if(IsNearbyTarget(targetObj.transform)){
-			SetMonsterState(MonsterState.Eat);
-			Eat();
-		}
-	}
-	void Eat()
-	{
-		if(!flagEat){
-			flagEat = true;
-			if(targetObj.tag == Tags.MAINCHAR){
-				//kill Niwel
-				//game over 
-			}else if(targetObj.tag == Tags.SOLDIER){
-				//kill Soldier
-				targetObj.GetComponent<Soldier>().Die(transform);
-			}
-			timer = eatDuration;
-		}else if(flagEat){
-			timer += Time.deltaTime;
-			if(timer <= 0){
-				timer = 0;
-				flagEat = false;
-				SetMonsterState(MonsterState.Investigate);
-			}
-		}
-	}
-
 	void MoveToTarget(Transform target)
 	{
 		SetDirection(target);
-		transform.position = Vector3.MoveTowards(transform.position,target.position,Time.deltaTime*speed);
+		Vector3 direction = transform.localScale == vLeft ? Vector3.left : Vector3.right;
+		transform.position += (direction * speed);
 	}
 
 	void SetDirection(Transform target)
@@ -191,10 +244,13 @@ public class Monster : MonoBehaviour {
 	{
 		Vector3 scaleSelf = transform.localScale;
 		float xTarget = target.position.x;
-		if( (scaleSelf ==  vLeft && transform.position.x <= xTarget - 0.05f) || 
-			(scaleSelf == vRight && transform.position.x >= xTarget + 0.05f)){
+
+		if( (scaleSelf ==  vLeft && transform.position.x <= xTarget + 0.1f) || 
+			(scaleSelf == vRight && transform.position.x >= xTarget - 0.1f)){
+
 			return true;
 		}else{
+			
 			return false;
 		}
 	}
@@ -203,8 +259,8 @@ public class Monster : MonoBehaviour {
 	{
 		Vector3 scaleSelf = transform.localScale;
 		float xTarget = target.position.x;
-		if( (scaleSelf ==  vLeft && transform.position.x <= xTarget - targetNearbyDistanceBeforeAttacking) || 
-			(scaleSelf == vRight && transform.position.x >= xTarget + targetNearbyDistanceBeforeAttacking)){
+		if( (scaleSelf ==  vLeft && transform.position.x <= xTarget + targetNearbyDistanceBeforeAttacking) || 
+			(scaleSelf == vRight && transform.position.x >= xTarget - targetNearbyDistanceBeforeAttacking)){
 			return true;
 		}else{
 			return false;
@@ -249,9 +305,7 @@ public class Monster : MonoBehaviour {
 
 	public void DetectHidingPlace(GameObject hidingPlaceObj)
 	{
-		if(monsterState != MonsterState.Investigate){
-			hidingPlace.Add(hidingPlaceObj);
-		}
+		hidingPlace.Add(hidingPlaceObj);
 	}
 
 	public void ChangeDirection()
@@ -261,51 +315,43 @@ public class Monster : MonoBehaviour {
 	}
 	#endregion
 //-------------------------------------------------------------------------------------------------------------------------------------------------	
+	#region UPDATE
 	void Update()
 	{
 		if(monsterState == MonsterState.Idle){
-			
+			if(flagInit) Idle();
+			if(!flagMonsterTimer) flagMonsterTimer = true;
 		}else if(monsterState == MonsterState.Patrol){
 			Patrol();
+			if(!flagMonsterTimer) flagMonsterTimer = true;
 		}else if(monsterState == MonsterState.Investigate){
+			if(!flagInit) flagInit = true;
 			Investigate();
+			if(!flagMonsterTimer) flagMonsterTimer = true;
 		}else if(monsterState == MonsterState.CheckHidingPlace){
 			CheckHidingPlace();
+			if(!flagMonsterTimer) flagMonsterTimer = true;
 		}else if(monsterState == MonsterState.Chase){
 			Chase();
-		}else if(monsterState == MonsterState.Eat){
-			Eat();
+			if(flagMonsterTimer) flagMonsterTimer = false;
+		}else if(monsterState == MonsterState.Attack){
+			Attack();
+			if(flagMonsterTimer) flagMonsterTimer = false;
+		}
+
+		if(flagMonsterTimer){
+			monsterAppearDuration -= Time.deltaTime;
+			if(monsterAppearDuration <= 0f){
+				Destroy(gameObject);
+			}
 		}
 	}
+	#endregion
 
 	IEnumerator Appearing()
 	{
 		yield return null;
 		SetMonsterState(MonsterState.Investigate);
 
-		yield return new WaitForSeconds(monsterAppearDuration);
-		Destroy(gameObject);
-	}
-
-	IEnumerator CheckingHidingPlace()
-	{
-		yield return new WaitForSeconds(checkHidingPlaceDuration);
-		SetMonsterState(MonsterState.Idle);
-		flagCheckHidingPlace = false;
-		StartCoroutine(Idling());
-	}
-
-	IEnumerator Idling()
-	{
-		hidingPlace.Clear();
-		SetAnimation(MonsterAnimationState.Idle);
-		yield return new WaitForSeconds(idleDuration);
-		MoveToNextSpot();
-	}
-
-	IEnumerator Eating()
-	{
-		yield return new WaitForSeconds(eatDuration);
-		SetMonsterState(MonsterState.Investigate);
 	}
 }

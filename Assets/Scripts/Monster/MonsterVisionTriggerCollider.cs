@@ -6,7 +6,7 @@ public class MonsterVisionTriggerCollider : MonoBehaviour {
 
 	void OnTriggerEnter2D(Collider2D other)
 	{
-		if(monster.monsterState != MonsterState.Eat){
+		if(monster.monsterState != MonsterState.Attack){
 			if(other.tag == Tags.MAINCHAR || other.tag == Tags.SOLDIER){
 				monster.DetectObjects(other.transform.parent.gameObject);
 			}
