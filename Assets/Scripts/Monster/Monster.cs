@@ -49,13 +49,21 @@ public class Monster : MonoBehaviour {
 	public bool flagChase = false;
 	public bool flagEat = false;
 
-	Vector3 vLeft = Vector3.one;
-	Vector3 vRight = new Vector3(-1f,1f,1f);
+
+	Vector3 currentViewDirection;
+	Vector3 vLeft, vRight;
+	float timer;
 	#endregion
 //-------------------------------------------------------------------------------------------------------------------------------------------------
 	#region initialization
-	public void Init()
+	/// <summary>
+	/// Initialize monster behavior, if facingRight, monster will go to direction --->, else <---
+	/// </summary>
+	public void Init(bool facingRight)
 	{
+		vLeft = transform.localScale;
+		vRight = new Vector3(transform.localScale.x * -1f,transform.localScale.y,transform.localScale.z);
+
 		SetMonsterState(MonsterState.Idle);
 		StartCoroutine(Appearing());
 	}
@@ -86,7 +94,6 @@ public class Monster : MonoBehaviour {
 				}
 			}else{
 				StartCoroutine(Idling());
-
 			}
 		}
 	}
@@ -95,22 +102,34 @@ public class Monster : MonoBehaviour {
 	{
 		if(hidingPlace.Count == 0) return null;
 		else if(hidingPlace.Count == 1){
-			return hidingPlace[0];
+			if(IsInFront(hidingPlace[0].transform)) return hidingPlace[0];
+			else return null;
 		}else{
-			Vector2 monster2DPos = new Vector2(transform.position.x,transform.position.y);
-			Vector2 hidingPlace2DPos = new Vector2(hidingPlace[0].transform.position.x,hidingPlace[0].transform.position.y);
-			int targetIndex = 0;
-			float currentNearestDistance = Vector2.Distance(monster2DPos,hidingPlace2DPos);
+			List<int> indexes = new List<int>();
 
-			for(int i = 1;i<hidingPlace.Count;i++){
-				hidingPlace2DPos = new Vector2(hidingPlace[i].transform.position.x,hidingPlace[i].transform.position.y);
-				if(Vector2.Distance(monster2DPos,hidingPlace2DPos) < currentNearestDistance){
-					targetIndex = i;
-					currentNearestDistance = Vector2.Distance(monster2DPos,hidingPlace2DPos);
+			for(int i = 0;i<hidingPlace.Count;i++){
+				if(IsInFront(hidingPlace[i].transform)){
+					indexes.Add(i);
 				}
 			}
-			return hidingPlace[targetIndex];
+
+			if(indexes.Count == 0){
+				return null;
+			}else if(indexes.Count == 1){
+				return hidingPlace[indexes[0]];
+			}else{
+				int targetIndex = UnityEngine.Random.Range(0,indexes.Count);
+				return hidingPlace[indexes[targetIndex]];
+			}
 		}
+	}
+
+	bool IsInFront(Transform hidingPlaceTransform)
+	{
+		if((transform.localScale == vRight && hidingPlaceTransform.position.x > transform.position.x) || 
+			(transform.localScale == vLeft && hidingPlaceTransform.position.x < transform.position.x))
+			return true;
+		else return false;
 	}
 
 	void CheckHidingPlace()
@@ -141,6 +160,14 @@ public class Monster : MonoBehaviour {
 			}else if(targetObj.tag == Tags.SOLDIER){
 				//kill Soldier
 				targetObj.GetComponent<Soldier>().Die(transform);
+			}
+			timer = eatDuration;
+		}else if(flagEat){
+			timer += Time.deltaTime;
+			if(timer <= 0){
+				timer = 0;
+				flagEat = false;
+				SetMonsterState(MonsterState.Investigate);
 			}
 		}
 	}
@@ -210,7 +237,11 @@ public class Monster : MonoBehaviour {
 	#region public modules
 	public void DetectObjects(GameObject otherObj)
 	{
-		if(otherObj.tag == Tags.SOLDIER){
+		if(targetObj == null){
+			targetObj = otherObj;
+			SetMonsterState(MonsterState.Chase);
+		}else if(targetObj != null && targetObj.tag != Tags.SOLDIER){
+			if(targetObj.tag == Tags.RANDOM_TARGET) Destroy(targetObj);
 			targetObj = otherObj;
 			SetMonsterState(MonsterState.Chase);
 		}
@@ -221,6 +252,12 @@ public class Monster : MonoBehaviour {
 		if(monsterState != MonsterState.Investigate){
 			hidingPlace.Add(hidingPlaceObj);
 		}
+	}
+
+	public void ChangeDirection()
+	{
+		if(transform.localScale == vLeft) transform.localScale = vRight;
+		else transform.localScale = vLeft;
 	}
 	#endregion
 //-------------------------------------------------------------------------------------------------------------------------------------------------	
@@ -233,7 +270,7 @@ public class Monster : MonoBehaviour {
 		}else if(monsterState == MonsterState.Investigate){
 			Investigate();
 		}else if(monsterState == MonsterState.CheckHidingPlace){
-			
+			CheckHidingPlace();
 		}else if(monsterState == MonsterState.Chase){
 			Chase();
 		}else if(monsterState == MonsterState.Eat){

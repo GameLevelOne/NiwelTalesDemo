@@ -18,4 +18,6 @@ public static class Tags {
 	public const string OPENABLE = "Openable";
 
 	public const string RANDOM_TARGET = "RandomTarget";
+
+	public const string WALL = "Wall";
 }

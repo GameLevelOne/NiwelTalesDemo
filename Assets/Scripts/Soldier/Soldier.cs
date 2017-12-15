@@ -203,12 +203,12 @@ public class Soldier : MonoBehaviour {
 		print("Dor");
 		float randomAngle = UnityEngine.Random.Range(-1*bulletRotationZ,bulletRotationZ);
 		float x = transform.localScale.x == 1f ? bulletXStartRight : bulletXStartLeft;
-		Vector3 bulletPos = new Vector3(transform.position.x+x,bulletY,0f);
-		Vector3 bulletRot = new Vector3(0,0,randomAngle);
+		Vector3 bulletPosision = new Vector3(transform.position.x+x,bulletY,0f);
+		Vector3 bulletRotation = new Vector3(0,0,randomAngle);
 
-		GameObject tempBullet = Instantiate(bulletObject,bulletPos,Quaternion.Euler(bulletRot));
+		GameObject tempBullet = Instantiate(bulletObject,bulletPosision,Quaternion.Euler(bulletRotation));
 		tempBullet.transform.localScale = transform.localScale.x == 1f ? vRight : vLeft;
-		tempBullet.GetComponent<Bullet>().Init();
+		tempBullet.GetComponent<Bullet>().Init(gameObject);
 	}
 
 	void OnSoldierDoneDiying()
