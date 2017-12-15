@@ -1,25 +1,41 @@
-﻿using UnityEngine;
-using System.Collections;
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
 
 public class CameraFollow : MonoBehaviour {
-    
-    public GameObject objectToFollow;
-    
-    public float speed = 1f;
-	public float smoothTime = 0.3f;
+	
+	private Vector3 playerPos;
+	private Vector3 targetPos;
+	private float smoothTime = 0.3f;
+	private Vector3 velocity = Vector3.zero;
+	private string playerTag = "MainChar";
 
-    Vector3 velocity = Vector3.zero;
+	float screenSize = 11.5f;
 
-    
-    void Update () {
-        float interpolation = speed * Time.deltaTime;
-        
-        Vector3 position = this.transform.position;
-        position.y = Mathf.Lerp(this.transform.position.y, objectToFollow.transform.position.y + 4.5f, interpolation);
-        position.x = Mathf.Lerp(this.transform.position.x, objectToFollow.transform.position.x, interpolation);
-        
-//        this.transform.position = position;
+	public Transform startPos;
+	public Transform endPos;
+	public GameObject playerObj;
 
-		transform.position = Vector3.SmoothDamp(transform.position,position,ref velocity,smoothTime);
-    }
+	// Use this for initialization
+	void Start () {
+		
+	}
+	
+	// Update is called once per frame
+	void Update ()
+	{
+
+		playerPos = playerObj.transform.localPosition;
+
+		float newX;
+		if (playerPos.x < startPos.position.x + screenSize)
+			newX = startPos.position.x + screenSize;
+		else if (playerPos.x > endPos.position.x - screenSize-2f)
+			newX = endPos.position.x - screenSize - 2f;
+		else
+			newX = playerPos.x;
+
+		targetPos = new Vector3(newX,6.4f,-10);
+		transform.position = Vector3.SmoothDamp(transform.position,targetPos,ref velocity,smoothTime);
+	}
 }

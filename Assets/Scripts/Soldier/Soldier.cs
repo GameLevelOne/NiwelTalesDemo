@@ -11,6 +11,7 @@ public enum SoldierState{
 	GrabNiwel,
 	Panic,
 	Investigate,
+	CheckHidingPlace,
 	Die
 }
 
@@ -36,9 +37,11 @@ public class Soldier : MonoBehaviour {
 
 	[Header("Custom Attributes")]
 	public float speed = 0.025f;
+	public float runSpeed;
 	public float idleDuration = 2f;
 	public float startleDuration = 3f;
 	public float chaseDuration = 10f;
+	public float checkHidingPlaceDuration = 0.5f;
 	public float panicDuration = 10f;
 	public Vector2 niwelGrabOffset = new Vector2(-3f,-4.2f);
 
@@ -63,6 +66,7 @@ public class Soldier : MonoBehaviour {
 	public bool flagGrabNiwel = false;
 	public bool flagPanic = false;
 	public bool flagInvestigate = false;
+	public bool flagCheckHidingPlace = false;
 	public bool flagDie = false;
 
 	Vector3 vLeft, vRight;
@@ -87,6 +91,7 @@ public class Soldier : MonoBehaviour {
 	void Idle()
 	{
 		if(!flagIdle){
+			niwelTarget = null;
 			flagIdle = true;
 			SetAnimation(SoldierAnimationState.Idle);
 			timer = idleDuration;
@@ -113,7 +118,8 @@ public class Soldier : MonoBehaviour {
 	{
 		SetDirection(target);
 		Vector3 direction = transform.localScale == vLeft ? Vector3.left : Vector3.right;
-		transform.position += (direction * speed);
+		float spd = soldierState == SoldierState.Chase ? runSpeed : speed;
+		transform.position += (direction * spd);
 	}
 
 	void SetDirection(Transform target)
@@ -127,12 +133,16 @@ public class Soldier : MonoBehaviour {
 
 	bool IsArrived(Transform target)
 	{
+		
 		Vector3 scaleSelf = transform.localScale;
-		float xTarget= target.position.x;
-		if( (scaleSelf == vLeft && transform.position.x <=xTarget + 0.05f) || 
-			(scaleSelf == vRight && transform.position.x >= xTarget - 0.05f)){
+		float xTarget = target.position.x;
+//		print ("niwel X = " + xTarget + ", soldier x = " + transform.position.x);
+		if( (scaleSelf == vLeft && transform.position.x <= xTarget + 1.2f) || 
+			(scaleSelf == vRight && transform.position.x >= xTarget - 1.2f)){
+//			print ("A");
 			return true;
 		}else{
+//			print ("B");
 			return false;
 		}
 	}
@@ -146,9 +156,12 @@ public class Soldier : MonoBehaviour {
 	void Startled()
 	{
 		if(!flagStartled){
+			flagChase = false;
+			flagCheckHidingPlace = false;
 			flagStartled = true;
 			SetAnimation(SoldierAnimationState.Startled);
 			timer = startleDuration;
+			SetDirection (niwelTarget.transform);
 		}else{
 			timer -= Time.deltaTime;
 			if(timer <= 0f){
@@ -164,18 +177,24 @@ public class Soldier : MonoBehaviour {
 			flagChase = true;
 			timer = chaseDuration;
 			SetAnimation(SoldierAnimationState.Run);
+			niwelTarget.GetComponent<Niwel> ().ChasedBySoldier ();
 		}else{
 			timer -= Time.deltaTime;
 			if(timer <= 0){
 				timer = 0;
 				flagChase = false;
 				SetSoldierState(SoldierState.Investigate);
+				niwelTarget.GetComponent<Niwel> ().NotChasedBySoldier ();
 			}
 
 			MoveToTarget(niwelTarget.transform);
 			if(IsArrived(niwelTarget.transform)){
 				flagChase = false;
 				SetSoldierState(SoldierState.GrabNiwel);
+			}
+			if(niwelTarget.GetComponent<Niwel>().GetNiwelHideStatus()){
+				flagChase = false;
+				SetSoldierState (SoldierState.Investigate);
 			}
 		}
 
@@ -192,6 +211,7 @@ public class Soldier : MonoBehaviour {
 					transform.position.y+niwelGrabOffset.y,
 					niwelTarget.transform.position.z
 				);
+			niwelTarget.GetComponent<Niwel> ().GrabbedBySoldier (this);
 		}
 	}
 
@@ -219,7 +239,7 @@ public class Soldier : MonoBehaviour {
 	{
 		if(!flagInvestigate){
 			print("Soldier is Investigating");
-			niwelTarget = null;
+//			niwelTarget = null;
 			flagInvestigate = true;
 			targetHidingPlace = GetNearestHidingPlace();
 		}else{
@@ -228,15 +248,32 @@ public class Soldier : MonoBehaviour {
 				MoveToTarget(targetHidingPlace.transform);
 				if(IsArrived(targetHidingPlace.transform)){
 					flagInvestigate = false;
-					SetSoldierState(SoldierState.Idle);
+					SetSoldierState(SoldierState.CheckHidingPlace);
 				}
 			}else{
 				flagInvestigate = false;
 				SetSoldierState(SoldierState.Idle);
 			}
 		}
-
 	}
+
+	void CheckHidingPlace()
+	{
+		if(!flagCheckHidingPlace){
+			flagCheckHidingPlace = true;
+			SetAnimation (SoldierAnimationState.CheckHidingPlace);
+			timer = checkHidingPlaceDuration;
+			niwelTarget.GetComponent<Niwel> ().GrabbedFromHidingPlace ();
+		}else{
+			timer -= Time.deltaTime;
+			if(timer <= 0){
+				timer = 0;
+				flagCheckHidingPlace = false;
+				SetSoldierState (SoldierState.Idle);
+			}
+		}
+	}
+
 
 	GameObject GetNearestHidingPlace()
 	{
@@ -302,9 +339,16 @@ public class Soldier : MonoBehaviour {
 	#region public modules
 	public void DetectObject(GameObject otherObj, bool longVision)
 	{
-		if(otherObj.tag == Tags.MAINCHAR){
-			niwelTarget = otherObj;
-			if(!longVision && (soldierState != SoldierState.Startled && soldierState != SoldierState.Chase && soldierState != SoldierState.Panic)) SetSoldierState(SoldierState.Startled);
+		if((soldierState != SoldierState.Panic) && otherObj.tag == Tags.MAINCHAR){
+			if(!otherObj.GetComponent<Niwel>().GetNiwelHideStatus()){
+				niwelTarget = otherObj;
+				if(!longVision && 
+				(soldierState != SoldierState.Startled && 
+				soldierState != SoldierState.Chase && 
+				soldierState != SoldierState.Panic &&
+				soldierState != SoldierState.GrabNiwel)) SetSoldierState(SoldierState.Startled);
+			}
+		
 		}else if(otherObj.tag == Tags.MONSTER){
 			if(!longVision && (soldierState != SoldierState.Panic))	SetSoldierState(SoldierState.Panic);
 		}
@@ -326,6 +370,7 @@ public class Soldier : MonoBehaviour {
 
 	public void ReleaseNiwel()
 	{
+		flagGrabNiwel = false;
 		SetSoldierState(SoldierState.Startled);
 	}
 	#endregion
@@ -340,10 +385,14 @@ public class Soldier : MonoBehaviour {
 			Chase();
 		}else if(soldierState == SoldierState.Startled){
 			Startled();
+		}else if(soldierState == SoldierState.GrabNiwel){
+			GrabNiwel ();
 		}else if(soldierState == SoldierState.Panic){
 			Panic();
 		}else if(soldierState == SoldierState.Investigate){
 			Investigate();
+		}else if(soldierState == SoldierState.CheckHidingPlace){
+			CheckHidingPlace ();
 		}else if(soldierState == SoldierState.Die){
 			Die();
 		}

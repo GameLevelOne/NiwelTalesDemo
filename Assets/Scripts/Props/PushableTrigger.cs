@@ -7,14 +7,14 @@ public class PushableTrigger : MonoBehaviour {
 
 	void OnTriggerEnter2D(Collider2D other){
 		if(other.tag == Tags.MAINCHAR){
-			Niwel obj = other.transform.parent.GetComponent<Niwel> ();
+			Niwel obj = other.transform.GetComponent<Niwel> ();
 			obj.SetPushedObj (transform.parent.gameObject, true, pushRight);
 		}
 	} 
 
 	void OnTriggerExit2D(Collider2D other){
 		if(other.tag == Tags.MAINCHAR){
-			Niwel obj = other.transform.parent.GetComponent<Niwel> ();
+			Niwel obj = other.transform.GetComponent<Niwel> ();
 			obj.SetPushedObj (null, false, pushRight);
 		}
 	}

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class HungerMeter : StressMeter {
-	public delegate void NiwelDead();
-	public event NiwelDead OnNiwelDead;
+
+	float hungerTickDuration = 30f;
 
 	void Start(){
 		base.Init ();
@@ -14,13 +14,7 @@ public class HungerMeter : StressMeter {
 	IEnumerator TickHungerMeter(){
 		while(true){
 			ModMeter (-1);
-			yield return new WaitForSeconds (1);
-		}
-
-		if(currentValue <= 0){
-			if(OnNiwelDead != null){
-				OnNiwelDead ();
-			}
+			yield return new WaitForSeconds (hungerTickDuration);
 		}
 	}
 }
