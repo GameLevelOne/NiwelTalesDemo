@@ -7,7 +7,7 @@ public class MonsterWallDetectionTriggerCollider : MonoBehaviour {
 	void OnTriggerEnter2D(Collider2D other)
 	{
 		if(other.tag == Tags.WALL){
-			monster.ChangeDirection();
+			monster.FaceWall();
 		}
 	}
 }

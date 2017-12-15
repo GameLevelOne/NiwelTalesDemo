@@ -8,6 +8,7 @@ public enum SoldierState{
 	Patrol,
 	Startled,
 	Chase,
+	GrabNiwel,
 	Panic,
 	Investigate,
 	Die
@@ -17,8 +18,10 @@ public enum SoldierAnimationState{
 	Idle,
 	Walk,
 	Startled,
+	Run,
 	CheckHidingPlace,
 	Panic,
+	GrabNiwel,
 	Die
 }
 
@@ -50,11 +53,13 @@ public class Soldier : MonoBehaviour {
 	public List<GameObject> hidingPlace = new List<GameObject>();
 	[SerializeField] GameObject targetHidingPlace;
 	[SerializeField] GameObject niwelTarget;
+	[SerializeField] float timer = 0;
 	public int currentWaypoint = 0;
 
 	public bool flagIdle = false;
 	public bool flagStartled = false;
 	public bool flagChase = false;
+	public bool flagGrabNiwel = false;
 	public bool flagPanic = false;
 	public bool flagInvestigate = false;
 	public bool flagDie = false;
@@ -70,8 +75,6 @@ public class Soldier : MonoBehaviour {
 
 	public void Init()
 	{
-//		bodyCollider.OnTriggerEnter += Patrol;
-//		forebodytach(SoldierTriggerCollider tc in visionCollider) tc.OnTriggerEnter += DetectObject;
 		vLeft = new Vector3(transform.localScale.x * -1f,transform.localScale.y,transform.localScale.z);
 		vRight = transform.localScale;
 		SetSoldierState(SoldierState.Patrol);
@@ -80,16 +83,28 @@ public class Soldier : MonoBehaviour {
 	#endregion
 //-------------------------------------------------------------------------------------------------------------------------------------------------
 	#region mechanics
+	void Idle()
+	{
+		if(!flagIdle){
+			flagIdle = true;
+			SetAnimation(SoldierAnimationState.Idle);
+			timer = idleDuration;
+		}else{
+			timer -= Time.deltaTime;
+			if(timer <= 0){
+				flagIdle = false;
+				ChangeWaypoint();
+				SetSoldierState(SoldierState.Patrol);
+			}
+		}
+	}
+
 	void Patrol()
 	{
-		print("Soldier is Patrolling");
 		SetAnimation(SoldierAnimationState.Walk);
 		MoveToTarget(waypoints[currentWaypoint]);
 		if(IsArrived(waypoints[currentWaypoint])){
-			if(!flagIdle){	
-				flagIdle = true;
-				StartCoroutine(Idling());
-			}
+			SetSoldierState(SoldierState.Idle);
 		}
 	}
 
@@ -129,22 +144,54 @@ public class Soldier : MonoBehaviour {
 
 	void Startled()
 	{
-		SetAnimation(SoldierAnimationState.Idle);
-		StartCoroutine(Startling());
+		if(!flagStartled){
+			flagStartled = true;
+			SetAnimation(SoldierAnimationState.Startled);
+			timer = startleDuration;
+		}else{
+			timer -= Time.deltaTime;
+			if(timer <= 0f){
+				flagStartled = false;
+				SetSoldierState(SoldierState.Chase);
+			}
+		}
 	}
 
 	void Chase()
 	{
-		MoveToTarget(niwelTarget.transform);
+		if(!flagChase){
+			flagChase = true;
+			timer = chaseDuration;
+			SetAnimation(SoldierAnimationState.Run);
+		}else{
+			timer -= Time.deltaTime;
+			if(timer <= 0){
+				timer = 0;
+				flagChase = false;
+				SetSoldierState(SoldierState.Investigate);
+			}
+
+			MoveToTarget(niwelTarget.transform);
+			if(IsArrived(niwelTarget.transform)){
+				flagChase = false;
+				SetSoldierState(SoldierState.GrabNiwel);
+			}
+		}
+
+	}
+
+	void GrabNiwel()
+	{
+		if(!flagGrabNiwel){
+			flagGrabNiwel = true;
+			SetAnimation(SoldierAnimationState.GrabNiwel);
+		}
 	}
 
 	void Panic()
 	{
 		if(!flagPanic){
 			flagPanic = true;
-			StopAllCoroutines();
-			print("Soldier is panicked");
-			SetSoldierState(SoldierState.Panic);
 			SetAnimation(SoldierAnimationState.Panic);
 		}
 	}
@@ -152,6 +199,7 @@ public class Soldier : MonoBehaviour {
 	void Die()
 	{
 		if(!flagDie){
+			flagPanic = false;
 			flagDie = true;
 			SetAnimation(SoldierAnimationState.Die);
 			thisRigidbody.simulated = false;
@@ -173,14 +221,11 @@ public class Soldier : MonoBehaviour {
 				MoveToTarget(targetHidingPlace.transform);
 				if(IsArrived(targetHidingPlace.transform)){
 					flagInvestigate = false;
-					flagIdle = true;
-					StartCoroutine(Idling());
-					
+					SetSoldierState(SoldierState.Idle);
 				}
 			}else{
 				flagInvestigate = false;
-				flagIdle = true;
-				StartCoroutine(Idling());
+				SetSoldierState(SoldierState.Idle);
 			}
 		}
 
@@ -267,22 +312,23 @@ public class Soldier : MonoBehaviour {
 //		SetSoldierState(SoldierState.Die);
 //		SetAnimation(SoldierAnimationState.Die);
 //	}
+
+	public void ReleaseNiwel()
+	{
+		SetSoldierState(SoldierState.Startled);
+	}
 	#endregion
 //-------------------------------------------------------------------------------------------------------------------------------------------------	
 	void Update()
 	{
-		if(soldierState == SoldierState.Idle)
-		{
-			
+		if(soldierState == SoldierState.Idle){
+			Idle();
 		}else if(soldierState == SoldierState.Patrol){
 			Patrol();
 		}else if(soldierState == SoldierState.Chase){
 			Chase();
 		}else if(soldierState == SoldierState.Startled){
-			if(!flagStartled){
-				flagStartled = true;
-				Startled();
-			}
+			Startled();
 		}else if(soldierState == SoldierState.Panic){
 			Panic();
 		}else if(soldierState == SoldierState.Investigate){
@@ -291,37 +337,4 @@ public class Soldier : MonoBehaviour {
 			Die();
 		}
 	}
-		
-	IEnumerator Idling()
-	{
-		SetSoldierState(SoldierState.Idle);
-		SetAnimation(SoldierAnimationState.Idle);
-
-		yield return new WaitForSeconds(idleDuration);
-
-		ChangeWaypoint();
-		flagIdle = false;
-		SetSoldierState(SoldierState.Patrol);
-	}
-
-	IEnumerator ChasingNiwel()
-	{
-		flagChase = true;
-		SetAnimation(SoldierAnimationState.Walk);
-		print("Soldier is chasing niwel");
-		yield return new WaitForSeconds(chaseDuration);
-		print("Soldier Stops Chasing Niwel");
-		flagChase = false;
-		SetSoldierState(SoldierState.Investigate);
-	}
-
-	IEnumerator Startling()
-	{
-		print("Soldier is startled");
-		yield return new WaitForSeconds(startleDuration);
-		SetSoldierState(SoldierState.Chase);
-		flagStartled = false;
-		StartCoroutine(ChasingNiwel());
-	}
-
 }

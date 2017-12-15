@@ -11,6 +11,6 @@ public class MainCamera : MonoBehaviour {
 	}
 	void Start()
 	{
-		monster.Init(false);
+//		monster.Init(false);
 	}
 }

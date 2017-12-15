@@ -14,9 +14,11 @@ public class Bullet : MonoBehaviour {
 	}
 
 	void OnCollisionEnter2D(Collision2D other){
-		go = false;
+		
+		print("GameObject: "+other.gameObject.name);
 		if(other.gameObject.tag == Tags.MONSTER){
-			other.transform.parent.GetComponent<Monster>().DetectObjects(other.gameObject);
+			other.transform.parent.GetComponent<Monster>().DetectObjects(soldierObj);
+			go = false;
 		}
 	}
 
