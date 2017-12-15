@@ -4,7 +4,10 @@ using UnityEngine;
 using UnityEngine.UI;
 
 public class StressMeter : MonoBehaviour {
-
+	public delegate void StressMeterFull();
+	public static event StressMeterFull OnStressMeterFull;
+	public delegate void NiwelDead();
+	public event NiwelDead OnNiwelDead;
 	public Image barFill;
 
 	protected float maxValue = 100;
@@ -36,5 +39,27 @@ public class StressMeter : MonoBehaviour {
 
 	void UpdateDisplay(){
 		barFill.fillAmount = currentValue / maxValue;
+		if(currentValue == maxValue){
+			if (OnStressMeterFull != null)
+				OnStressMeterFull ();
+		} else if(currentValue <= 0){
+			if (OnNiwelDead != null)
+				OnNiwelDead ();
+		}
+	}
+
+	public void StartTickStressMeter(float value){
+		StartCoroutine (TickStressMeter (value));
+	}
+
+	public void StopTickStressMeter(){
+		StopCoroutine ("TickStressMeter");
+	}
+
+	IEnumerator TickStressMeter(float value){
+		while(true){
+			ModMeter (value);
+			yield return new WaitForSeconds (2);
+		}
 	}
 }

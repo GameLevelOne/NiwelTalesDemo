@@ -51,14 +51,22 @@ public class Monster : MonoBehaviour {
 	public bool flagCheckHidingPlace = false;
 	public bool flagChase = false;
 	public bool flagAttack = false;
-
+	public bool flagConfused = false;
 
 	Vector3 currentViewDirection;
+
+	public delegate void MonsterDestroyed();
+	public event MonsterDestroyed OnMonsterDestroyed;
 
 	float timer;
 	#endregion
 //-------------------------------------------------------------------------------------------------------------------------------------------------
 	#region initialization
+	void Start()
+	{
+		
+	}
+
 	/// <summary>
 	/// Initialize monster behavior, if facingRight, monster will go to direction --->, else <---
 	/// </summary>
@@ -95,10 +103,12 @@ public class Monster : MonoBehaviour {
 			timer = idleDuration;
 			SetAnimation(MonsterAnimationState.Idle);
 		}else if(flagIdle){
-			timer -= Time.deltaTime;
-			if(timer <= 0f){
-				flagIdle = false;
-				MoveToNextSpot();
+			if(!flagConfused){
+				timer -= Time.deltaTime;
+				if(timer <= 0f){
+					flagIdle = false;
+					MoveToNextSpot();
+				}
 			}
 		}
 	}
@@ -152,6 +162,7 @@ public class Monster : MonoBehaviour {
 
 	void Chase()
 	{
+		if(flagConfused) flagConfused = false;
 		SetAnimation(MonsterAnimationState.Run);
 		MoveToTarget(targetObj.transform);
 		if(IsNearbyTarget(targetObj.transform)){
@@ -163,6 +174,7 @@ public class Monster : MonoBehaviour {
 	void Attack()
 	{
 		if(!flagAttack){
+			flagInvestigate = false;
 			flagAttack = true;
 			SetAnimation(MonsterAnimationState.Attack);
 			if(targetObj.tag == Tags.MAINCHAR){
@@ -170,6 +182,7 @@ public class Monster : MonoBehaviour {
 				//game over 
 			}else if(targetObj.tag == Tags.SOLDIER){
 				//kill Soldier
+				print("KILL SOLDIER");
 				targetObj.GetComponent<Soldier>().SetSoldierState(SoldierState.Die);
 			}
 			timer = attackDuration;
@@ -178,6 +191,7 @@ public class Monster : MonoBehaviour {
 			if(timer <= 0){
 				timer = 0;
 				flagAttack = false;
+				targetObj = null;
 				SetMonsterState(MonsterState.Idle);
 			}
 		}
@@ -244,13 +258,13 @@ public class Monster : MonoBehaviour {
 	{
 		Vector3 scaleSelf = transform.localScale;
 		float xTarget = target.position.x;
-
+//		print (scaleSelf + " " + vRight+", "+transform.position.x+" "+xTarget);
 		if( (scaleSelf ==  vLeft && transform.position.x <= xTarget + 0.1f) || 
 			(scaleSelf == vRight && transform.position.x >= xTarget - 0.1f)){
-
+//			print ("A");
 			return true;
 		}else{
-			
+//			print ("B");
 			return false;
 		}
 	}
@@ -269,11 +283,12 @@ public class Monster : MonoBehaviour {
 
 	void MoveToNextSpot()
 	{
+		print (transform.localScale.x);
 		targetObj = Instantiate(randomDestinationTargetObj) as GameObject;
 		float randomRange = 
-			transform.localScale.x == -1f ? 
-			UnityEngine.Random.Range(6f,10f) : 
-			UnityEngine.Random.Range(-6f,-10f);
+			transform.localScale.x < 0 ? 
+			UnityEngine.Random.Range(-6f,-10f) : 
+			UnityEngine.Random.Range(6f,10f);
 
 		targetObj.transform.position = new Vector3(transform.position.x+randomRange,transform.position.y,transform.position.z);
 		SetMonsterState(MonsterState.Patrol);
@@ -293,13 +308,15 @@ public class Monster : MonoBehaviour {
 	#region public modules
 	public void DetectObjects(GameObject otherObj)
 	{
-		if(targetObj == null){
-			targetObj = otherObj;
-			SetMonsterState(MonsterState.Chase);
-		}else if(targetObj != null && targetObj.tag != Tags.SOLDIER){
-			if(targetObj.tag == Tags.RANDOM_TARGET) Destroy(targetObj);
-			targetObj = otherObj;
-			SetMonsterState(MonsterState.Chase);
+		if(otherObj.tag != Tags.MONSTER){
+			if(targetObj == null){
+				targetObj = otherObj;
+				SetMonsterState(MonsterState.Chase);
+			}else if(targetObj != null && targetObj.tag != Tags.SOLDIER){
+				if(targetObj.tag == Tags.RANDOM_TARGET) Destroy(targetObj);
+				targetObj = otherObj;
+				SetMonsterState(MonsterState.Chase);
+			}
 		}
 	}
 
@@ -308,10 +325,16 @@ public class Monster : MonoBehaviour {
 		hidingPlace.Add(hidingPlaceObj);
 	}
 
-	public void ChangeDirection()
+//	public void ChangeDirection()
+//	{
+//		if(transform.localScale == vLeft) transform.localScale = vRight;
+//		else transform.localScale = vLeft;
+//	}
+
+	public void FaceWall()
 	{
-		if(transform.localScale == vLeft) transform.localScale = vRight;
-		else transform.localScale = vLeft;
+		flagConfused = true;
+		SetMonsterState(MonsterState.Idle);
 	}
 	#endregion
 //-------------------------------------------------------------------------------------------------------------------------------------------------	
@@ -342,7 +365,8 @@ public class Monster : MonoBehaviour {
 		if(flagMonsterTimer){
 			monsterAppearDuration -= Time.deltaTime;
 			if(monsterAppearDuration <= 0f){
-				Destroy(gameObject);
+				if (OnMonsterDestroyed != null)
+					OnMonsterDestroyed ();
 			}
 		}
 	}
