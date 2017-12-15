@@ -57,9 +57,9 @@ public class Soldier : MonoBehaviour {
 	public bool flagChase = false;
 	public bool flagPanic = false;
 	public bool flagInvestigate = false;
+	public bool flagDie = false;
 
-	Vector3 vLeft = new Vector3(-1f,1f,1f);
-	Vector3 vRight = Vector3.one;
+	Vector3 vLeft, vRight;
 	#endregion
 //-------------------------------------------------------------------------------------------------------------------------------------------------
 	#region initialization
@@ -72,7 +72,8 @@ public class Soldier : MonoBehaviour {
 	{
 //		bodyCollider.OnTriggerEnter += Patrol;
 //		forebodytach(SoldierTriggerCollider tc in visionCollider) tc.OnTriggerEnter += DetectObject;
-
+		vLeft = new Vector3(transform.localScale.x * -1f,transform.localScale.y,transform.localScale.z);
+		vRight = transform.localScale;
 		SetSoldierState(SoldierState.Patrol);
 		thisAnim.SetInteger("State",(int)soldierState);
 	}
@@ -95,7 +96,8 @@ public class Soldier : MonoBehaviour {
 	void MoveToTarget(Transform target)
 	{
 		SetDirection(target);
-		transform.position = Vector3.MoveTowards(transform.position,target.position,Time.deltaTime*speed);
+		Vector3 direction = transform.localScale == vLeft ? Vector3.left : Vector3.right;
+		transform.position += (direction * speed);
 	}
 
 	void SetDirection(Transform target)
@@ -140,9 +142,20 @@ public class Soldier : MonoBehaviour {
 	{
 		if(!flagPanic){
 			flagPanic = true;
+			StopAllCoroutines();
 			print("Soldier is panicked");
 			SetSoldierState(SoldierState.Panic);
 			SetAnimation(SoldierAnimationState.Panic);
+		}
+	}
+
+	void Die()
+	{
+		if(!flagDie){
+			flagDie = true;
+			SetAnimation(SoldierAnimationState.Die);
+			thisRigidbody.simulated = false;
+			thisCollider.enabled = false;
 		}
 	}
 
@@ -219,7 +232,7 @@ public class Soldier : MonoBehaviour {
 	}
 	#endregion
 
-	void SetSoldierState(SoldierState state)
+	public void SetSoldierState(SoldierState state)
 	{
 		soldierState = state;
 	}
@@ -247,13 +260,13 @@ public class Soldier : MonoBehaviour {
 			hidingPlace.Add(hidingPlaceObj);
 		}
 	}
-
-	public void Die(Transform monsterTarget)
-	{
-		SetDirection(monsterTarget);
-		SetSoldierState(SoldierState.Die);
-		SetAnimation(SoldierAnimationState.Die);
-	}
+//
+//	public void Die(Transform monsterTarget)
+//	{
+//		SetDirection(monsterTarget);
+//		SetSoldierState(SoldierState.Die);
+//		SetAnimation(SoldierAnimationState.Die);
+//	}
 	#endregion
 //-------------------------------------------------------------------------------------------------------------------------------------------------	
 	void Update()
@@ -275,7 +288,7 @@ public class Soldier : MonoBehaviour {
 		}else if(soldierState == SoldierState.Investigate){
 			Investigate();
 		}else if(soldierState == SoldierState.Die){
-			
+			Die();
 		}
 	}
 		
