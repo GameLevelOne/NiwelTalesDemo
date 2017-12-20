@@ -56,7 +56,7 @@ public class Soldier : MonoBehaviour {
 	public SoldierState soldierState = SoldierState.Idle;
 	public List<GameObject> hidingPlace = new List<GameObject>();
 	[SerializeField] GameObject targetHidingPlace;
-	[SerializeField] GameObject niwelTarget;
+	[SerializeField] GameObject targetMainChar;
 	[SerializeField] float timer = 0;
 	public int currentWaypoint = 0;
 
@@ -91,7 +91,7 @@ public class Soldier : MonoBehaviour {
 	void Idle()
 	{
 		if(!flagIdle){
-			niwelTarget = null;
+			targetMainChar = null;
 			flagIdle = true;
 			SetAnimation(SoldierAnimationState.Idle);
 			timer = idleDuration;
@@ -133,7 +133,6 @@ public class Soldier : MonoBehaviour {
 
 	bool IsArrived(Transform target)
 	{
-		
 		Vector3 scaleSelf = transform.localScale;
 		float xTarget = target.position.x;
 //		print ("niwel X = " + xTarget + ", soldier x = " + transform.position.x);
@@ -161,7 +160,7 @@ public class Soldier : MonoBehaviour {
 			flagStartled = true;
 			SetAnimation(SoldierAnimationState.Startled);
 			timer = startleDuration;
-			SetDirection (niwelTarget.transform);
+			SetDirection (targetMainChar.transform);
 		}else{
 			timer -= Time.deltaTime;
 			if(timer <= 0f){
@@ -177,22 +176,22 @@ public class Soldier : MonoBehaviour {
 			flagChase = true;
 			timer = chaseDuration;
 			SetAnimation(SoldierAnimationState.Run);
-			niwelTarget.GetComponent<Niwel> ().ChasedBySoldier ();
+			targetMainChar.GetComponent<Niwel> ().ChasedBySoldier ();
 		}else{
 			timer -= Time.deltaTime;
 			if(timer <= 0){
 				timer = 0;
 				flagChase = false;
 				SetSoldierState(SoldierState.Investigate);
-				niwelTarget.GetComponent<Niwel> ().NotChasedBySoldier ();
+				targetMainChar.GetComponent<Niwel> ().NotChasedBySoldier ();
 			}
 
-			MoveToTarget(niwelTarget.transform);
-			if(IsArrived(niwelTarget.transform)){
+			MoveToTarget(targetMainChar.transform);
+			if(IsArrived(targetMainChar.transform)){
 				flagChase = false;
 				SetSoldierState(SoldierState.GrabNiwel);
 			}
-			if(niwelTarget.GetComponent<Niwel>().GetNiwelHideStatus()){
+			if(targetMainChar.GetComponent<Niwel>().GetNiwelHideStatus()){
 				flagChase = false;
 				SetSoldierState (SoldierState.Investigate);
 			}
@@ -204,13 +203,13 @@ public class Soldier : MonoBehaviour {
 		if(!flagGrabNiwel){
 			flagGrabNiwel = true;
 			SetAnimation(SoldierAnimationState.GrabNiwel);
-			niwelTarget.transform.position = 
+			targetMainChar.transform.position = 
 				new Vector3(
 					transform.position.x+niwelGrabOffset.x,
 					transform.position.y+niwelGrabOffset.y,
-					niwelTarget.transform.position.z
+					targetMainChar.transform.position.z
 				);
-			niwelTarget.GetComponent<Niwel> ().GrabbedBySoldier (this);
+			targetMainChar.GetComponent<Niwel> ().GrabbedBySoldier (this);
 		}
 	}
 
@@ -238,7 +237,7 @@ public class Soldier : MonoBehaviour {
 	{
 		if(!flagInvestigate){
 			print("Soldier is Investigating");
-//			niwelTarget = null;
+//			targetMainChar = null;
 			flagInvestigate = true;
 			targetHidingPlace = GetNearestHidingPlace();
 		}else{
@@ -262,7 +261,7 @@ public class Soldier : MonoBehaviour {
 			flagCheckHidingPlace = true;
 			SetAnimation (SoldierAnimationState.CheckHidingPlace);
 			timer = checkHidingPlaceDuration;
-			niwelTarget.GetComponent<Niwel> ().GrabbedFromHidingPlace ();
+			targetMainChar.GetComponent<Niwel> ().GrabbedFromHidingPlace ();
 		}else{
 			timer -= Time.deltaTime;
 			if(timer <= 0){
@@ -333,6 +332,7 @@ public class Soldier : MonoBehaviour {
 		flagGrabNiwel = false;
 		thisAnim.SetInteger("State",(int)state);
 	}
+
 	#endregion
 //-------------------------------------------------------------------------------------------------------------------------------------------------
 	#region public modules
@@ -340,7 +340,7 @@ public class Soldier : MonoBehaviour {
 	{
 		if((soldierState != SoldierState.Panic) && otherObj.tag == Tags.MAINCHAR){
 			if(!otherObj.GetComponent<Niwel>().GetNiwelHideStatus()){
-				niwelTarget = otherObj;
+				targetMainChar = otherObj;
 				if(!longVision && 
 				(soldierState != SoldierState.Startled && 
 				soldierState != SoldierState.Chase && 
@@ -372,6 +372,11 @@ public class Soldier : MonoBehaviour {
 		flagGrabNiwel = false;
 		SetSoldierState(SoldierState.Startled);
 	}
+
+	public void SetMainCharObject(GameObject mainCharObj)
+	{
+		targetMainChar = mainCharObj;
+	}
 	#endregion
 //-------------------------------------------------------------------------------------------------------------------------------------------------	
 	void Update()
@@ -394,6 +399,37 @@ public class Soldier : MonoBehaviour {
 			CheckHidingPlace ();
 		}else if(soldierState == SoldierState.Die){
 			Die();
+		}
+	}
+
+	void StateCheck()
+	{
+		if(soldierState == SoldierState.Idle){
+			if(targetMainChar != null){
+				SetSoldierState(SoldierState.Startled);
+			}
+		}else if(soldierState == SoldierState.Patrol){
+			//if niwel found, startled
+			//if monster found, panic
+		}else if(soldierState == SoldierState.Chase){
+			//if monster found, panic
+		}else if(soldierState == SoldierState.Startled){
+			//if niwel found, startled
+			//if monster found, panic
+		}else if(soldierState == SoldierState.GrabNiwel){
+			//if niwel found, startled
+			//if monster found, panic
+		}else if(soldierState == SoldierState.Panic){
+			//--
+		}else if(soldierState == SoldierState.Investigate){
+			//if niwel found, startled
+
+			//if monster found, panic
+		}else if(soldierState == SoldierState.CheckHidingPlace){
+			
+			//if monster found, panic
+		}else if(soldierState == SoldierState.Die){
+			
 		}
 	}
 }
