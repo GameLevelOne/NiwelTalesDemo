@@ -178,7 +178,6 @@ public class Soldier : MonoBehaviour {
 				SetSoldierState(SoldierState.GrabNiwel);
 			}
 		}
-
 	}
 
 	void GrabNiwel()
