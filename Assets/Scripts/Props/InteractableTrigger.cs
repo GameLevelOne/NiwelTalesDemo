@@ -5,9 +5,8 @@ using UnityEngine;
 public class InteractableTrigger : MonoBehaviour {
 
 	void OnTriggerEnter2D(Collider2D other){
-		Debug.Log (other.tag);
 		if(other.tag == Tags.MAINCHAR){
-			Niwel obj = other.transform.parent.GetComponent<Niwel> ();
+			Niwel obj = other.transform.GetComponent<Niwel> ();
 			obj.SetColliderObj (true,transform.parent.gameObject);
 		}
 	}
@@ -15,7 +14,7 @@ public class InteractableTrigger : MonoBehaviour {
 	void OnTriggerExit2D (Collider2D other)
 	{
 		if (other.tag == Tags.MAINCHAR) {
-			Niwel obj = other.transform.parent.GetComponent<Niwel> ();
+			Niwel obj = other.transform.GetComponent<Niwel> ();
 			obj.SetColliderObj (false,null);
 		}
 	}

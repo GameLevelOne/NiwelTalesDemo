@@ -7,9 +7,9 @@ public class Door : Interactables {
 
 	public void OpenCloseDoor(){
 		if(doorToOpen){
-			transform.parent.parent.GetComponent<Rooms> ().RevealRoom (false);
+			transform.parent.GetComponent<Rooms> ().RevealRoom (false);
 		} else{
-			transform.parent.parent.GetComponent<Rooms> ().RevealRoom (true);
+			transform.parent.GetComponent<Rooms> ().RevealRoom (true);
 		}
 	}
 }

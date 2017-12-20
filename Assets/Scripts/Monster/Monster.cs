@@ -55,13 +55,16 @@ public class Monster : MonoBehaviour {
 
 	Vector3 currentViewDirection;
 
+	public delegate void MonsterDestroyed();
+	public event MonsterDestroyed OnMonsterDestroyed;
+
 	float timer;
 	#endregion
 //-------------------------------------------------------------------------------------------------------------------------------------------------
 	#region initialization
 	void Start()
 	{
-		Init(false);
+		
 	}
 
 	/// <summary>
@@ -255,13 +258,13 @@ public class Monster : MonoBehaviour {
 	{
 		Vector3 scaleSelf = transform.localScale;
 		float xTarget = target.position.x;
-
+//		print (scaleSelf + " " + vRight+", "+transform.position.x+" "+xTarget);
 		if( (scaleSelf ==  vLeft && transform.position.x <= xTarget + 0.1f) || 
 			(scaleSelf == vRight && transform.position.x >= xTarget - 0.1f)){
-
+//			print ("A");
 			return true;
 		}else{
-			
+//			print ("B");
 			return false;
 		}
 	}
@@ -280,11 +283,12 @@ public class Monster : MonoBehaviour {
 
 	void MoveToNextSpot()
 	{
+		print (transform.localScale.x);
 		targetObj = Instantiate(randomDestinationTargetObj) as GameObject;
 		float randomRange = 
-			transform.localScale.x == -1f ? 
-			UnityEngine.Random.Range(6f,10f) : 
-			UnityEngine.Random.Range(-6f,-10f);
+			transform.localScale.x < 0 ? 
+			UnityEngine.Random.Range(-6f,-10f) : 
+			UnityEngine.Random.Range(6f,10f);
 
 		targetObj.transform.position = new Vector3(transform.position.x+randomRange,transform.position.y,transform.position.z);
 		SetMonsterState(MonsterState.Patrol);
@@ -361,7 +365,8 @@ public class Monster : MonoBehaviour {
 		if(flagMonsterTimer){
 			monsterAppearDuration -= Time.deltaTime;
 			if(monsterAppearDuration <= 0f){
-				Destroy(gameObject);
+				if (OnMonsterDestroyed != null)
+					OnMonsterDestroyed ();
 			}
 		}
 	}

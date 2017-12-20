@@ -7,8 +7,10 @@ public class MonsterVisionTriggerCollider : MonoBehaviour {
 	void OnTriggerEnter2D(Collider2D other)
 	{
 		if(monster.monsterState != MonsterState.Attack){
-			if(other.tag == Tags.MAINCHAR || other.tag == Tags.SOLDIER){
+			if(other.tag == Tags.SOLDIER){
 				monster.DetectObjects(other.transform.parent.gameObject);
+			} else if(other.tag == Tags.MAINCHAR){
+				monster.DetectObjects(other.transform.gameObject);
 			}
 		}
 	}
