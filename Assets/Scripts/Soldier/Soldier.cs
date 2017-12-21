@@ -350,13 +350,17 @@ public class Soldier : MonoBehaviour {
 			}
 
 			Startled();
-
 		}else if(soldierState == SoldierState.Chase){//--------------CHASE
 			if(targetMonster != null){
 				InitPanic();
 			}
 
-			Chase();
+			if(targetMainChar == null){
+
+				InitIdle();
+			}else{
+				Chase();
+			}
 		}else if(soldierState == SoldierState.GrabNiwel){//--------------GRABNIWEL
 			if(targetMonster != null){
 				ReleaseNiwel();
