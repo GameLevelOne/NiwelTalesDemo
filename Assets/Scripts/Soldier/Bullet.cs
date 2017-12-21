@@ -17,7 +17,7 @@ public class Bullet : MonoBehaviour {
 		
 //		print("GameObject: "+other.gameObject.name);
 		if(other.gameObject.tag == Tags.MONSTER){
-			if(other.transform.parent != null)	other.transform.parent.GetComponent<Monster>().DetectObjects(soldierObj);
+			if(other.transform.parent != null)	other.transform.parent.GetComponent<Monster>().InitChase(soldierObj);
 			go = false;
 		}
 	}

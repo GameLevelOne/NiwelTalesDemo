@@ -3,7 +3,6 @@ using UnityEngine;
 
 public class SoldierTriggerCollider : MonoBehaviour {
 	public string tagCheck;
-
 	protected Soldier soldier;
 
 	protected void Awake()
