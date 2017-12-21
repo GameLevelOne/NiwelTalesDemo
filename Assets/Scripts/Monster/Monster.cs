@@ -183,7 +183,7 @@ public class Monster : MonoBehaviour {
 			}else if(targetObj.tag == Tags.SOLDIER){
 				//kill Soldier
 				print("KILL SOLDIER");
-				targetObj.GetComponent<Soldier>().SetSoldierState(SoldierState.Die);
+				targetObj.GetComponent<Soldier>().InitDie();
 			}
 			timer = attackDuration;
 		}else if(flagAttack){
