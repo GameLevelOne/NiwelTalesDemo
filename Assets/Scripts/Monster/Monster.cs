@@ -28,6 +28,7 @@ public class Monster : MonoBehaviour {
 	[Header("Monster Attributes")]
 	public Animator thisAnim;
 	public Rigidbody2D thisRigidbody;
+	public Collider2D bodyCollider;
 	public GameObject randomDestinationTargetObj;
 
 	[Header("Custom Attributes")]
