@@ -80,93 +80,8 @@ public class Soldier : MonoBehaviour {
 	#endregion
 //-------------------------------------------------------------------------------------------------------------------------------------------------
 	#region mechanics
-	void MoveToTarget(Transform target)
-	{
-		SetDirection(target);
-		Vector3 direction = transform.localScale == vLeft ? Vector3.left : Vector3.right;
-		float spd = soldierState == SoldierState.Chase ? runSpeed : speed;
-		transform.position += (direction * spd);
-	}
 
-	void SetDirection(Transform target)
-	{
-		if(transform.position.x < target.position.x){
-			transform.localScale = vRight;
-		}else{
-			transform.localScale = vLeft;
-		}
-	}
-
-	bool IsArrived(Transform target)
-	{
-		Vector3 scaleSelf = transform.localScale;
-		float xTarget = target.position.x;
-		if( (scaleSelf == vLeft && transform.position.x <= xTarget + 1.2f) || 
-			(scaleSelf == vRight && transform.position.x >= xTarget - 1.2f)){
-			return true;
-		}else{
-			return false;
-		}
-	}
-
-	void ChangeWaypoint()
-	{
-		currentWaypoint++;
-		if(currentWaypoint == waypoints.Length) currentWaypoint = 0;
-	}
-		
-	GameObject GetNearestHidingPlace()
-	{
-		if(hidingPlace.Count == 0) return null;
-		else if(hidingPlace.Count == 1){
-			return hidingPlace[0];
-		}else{
-			Vector2 soldier2DPos = new Vector2(transform.position.x,transform.position.y);
-			Vector2 hidingPlace2DPos = new Vector2(hidingPlace[0].transform.position.x,hidingPlace[0].transform.position.y);
-			int targetIndex = 0;
-			float currentNearestDistance = Vector2.Distance(soldier2DPos,hidingPlace2DPos);
-
-			for(int i = 1; i<hidingPlace.Count;i++){
-				hidingPlace2DPos = new Vector2(hidingPlace[i].transform.position.x,hidingPlace[i].transform.position.y);
-				if(Vector2.Distance(soldier2DPos,hidingPlace2DPos) < currentNearestDistance){
-					targetIndex = i;
-					currentNearestDistance = Vector2.Distance(soldier2DPos,hidingPlace2DPos);
-				}
-			}
-
-			return hidingPlace[targetIndex];
-		}
-	}
-
-	#region AnimationEvent
-	public void Shoot()
-	{
-		//tembak dor dor
-//		print("Dor");
-		float randomAngle = UnityEngine.Random.Range(-1*bulletRotationZ,bulletRotationZ);
-		float x = transform.localScale.x == 1f ? bulletXStartRight : bulletXStartLeft;
-		Vector3 bulletPosision = new Vector3(transform.position.x+x,bulletY,0f);
-		Vector3 bulletRotation = new Vector3(0,0,randomAngle);
-
-		GameObject tempBullet = Instantiate(bulletObject,bulletPosision,Quaternion.Euler(bulletRotation));
-		tempBullet.transform.localScale = 
-			transform.localScale.x == 1f ? 
-			tempBullet.transform.localScale : 
-			new Vector3(tempBullet.transform.localScale.x * -1f,tempBullet.transform.localScale.y,tempBullet.transform.localScale.z);
-		tempBullet.GetComponent<Bullet>().Init(gameObject);
-	}
-	#endregion
-
-	public void SetSoldierState(SoldierState state)
-	{
-		soldierState = state;
-	}
-
-	void SetAnimation(SoldierAnimationState state)
-	{
-		thisAnim.SetInteger("State",(int)state);
-	}
-
+	#region main behaviour
 	void InitIdle()
 	{
 		SetSoldierState(SoldierState.Idle);
@@ -218,7 +133,6 @@ public class Soldier : MonoBehaviour {
 		}
 
 		MoveToTarget(targetMainChar.transform);
-
 	}
 
 	public void InitGrabNiwel()
@@ -265,7 +179,7 @@ public class Soldier : MonoBehaviour {
 	{
 		timer -= Time.deltaTime;
 		if(timer <= 0){
-			hidingPlace.Clear();
+			targetHidingPlace = null;
 			InitIdle();
 		}
 	}
@@ -275,7 +189,7 @@ public class Soldier : MonoBehaviour {
 		targetMainChar = null;
 		SetSoldierState(SoldierState.Panic);
 	}
-		
+
 	public void InitDie()
 	{
 		SetSoldierState(SoldierState.Die);
@@ -283,33 +197,99 @@ public class Soldier : MonoBehaviour {
 		thisCollider.enabled = false;
 	}
 	#endregion
+
+	#region AnimationEvent
+	public void Shoot()
+	{
+		//tembak dor dor
+//		print("Dor");
+		float randomAngle = UnityEngine.Random.Range(-1*bulletRotationZ,bulletRotationZ);
+		float x = transform.localScale.x == 1f ? bulletXStartRight : bulletXStartLeft;
+		Vector3 bulletPosision = new Vector3(transform.position.x+x,bulletY,0f);
+		Vector3 bulletRotation = new Vector3(0,0,randomAngle);
+
+		GameObject tempBullet = Instantiate(bulletObject,bulletPosision,Quaternion.Euler(bulletRotation));
+		tempBullet.transform.localScale = 
+			transform.localScale.x == 1f ? 
+			tempBullet.transform.localScale : 
+			new Vector3(tempBullet.transform.localScale.x * -1f,tempBullet.transform.localScale.y,tempBullet.transform.localScale.z);
+		tempBullet.GetComponent<Bullet>().Init(gameObject);
+	}
+	#endregion
+
+	#region core mechanic
+	public void SetSoldierState(SoldierState state)
+	{
+		soldierState = state;
+	}
+
+	void SetAnimation(SoldierAnimationState state)
+	{
+		thisAnim.SetInteger("State",(int)state);
+	}
+
+	void MoveToTarget(Transform target)
+	{
+		SetDirection(target);
+		Vector3 direction = transform.localScale == vLeft ? Vector3.left : Vector3.right;
+		float spd = soldierState == SoldierState.Chase ? runSpeed : speed;
+		transform.position += (direction * spd);
+	}
+
+	void SetDirection(Transform target)
+	{
+		if(transform.position.x < target.position.x){
+			transform.localScale = vRight;
+		}else{
+			transform.localScale = vLeft;
+		}
+	}
+
+	bool IsArrived(Transform target)
+	{
+		Vector3 scaleSelf = transform.localScale;
+		float xTarget = target.position.x;
+		if( (scaleSelf == vLeft && transform.position.x <= xTarget + 1.2f) || 
+			(scaleSelf == vRight && transform.position.x >= xTarget - 1.2f)){
+			return true;
+		}else{
+			return false;
+		}
+	}
+
+	void ChangeWaypoint()
+	{
+		currentWaypoint++;
+		if(currentWaypoint == waypoints.Length) currentWaypoint = 0;
+	}
+
+	GameObject GetNearestHidingPlace()
+	{
+		if(hidingPlace.Count == 0) return null;
+		else if(hidingPlace.Count == 1){
+			return hidingPlace[0];
+		}else{
+			Vector2 soldier2DPos = new Vector2(transform.position.x,transform.position.y);
+			Vector2 hidingPlace2DPos = new Vector2(hidingPlace[0].transform.position.x,hidingPlace[0].transform.position.y);
+			int targetIndex = 0;
+			float currentNearestDistance = Vector2.Distance(soldier2DPos,hidingPlace2DPos);
+
+			for(int i = 1; i<hidingPlace.Count;i++){
+				hidingPlace2DPos = new Vector2(hidingPlace[i].transform.position.x,hidingPlace[i].transform.position.y);
+				if(Vector2.Distance(soldier2DPos,hidingPlace2DPos) < currentNearestDistance){
+					targetIndex = i;
+					currentNearestDistance = Vector2.Distance(soldier2DPos,hidingPlace2DPos);
+				}
+			}
+
+			return hidingPlace[targetIndex];
+		}
+	}
+	#endregion
+
+	#endregion
 //-------------------------------------------------------------------------------------------------------------------------------------------------
 	#region public modules
-
-	public void DetectObject(GameObject otherObj, bool longVision)
-	{
-		if((soldierState != SoldierState.Panic) && otherObj.tag == Tags.MAINCHAR){
-			if(!otherObj.GetComponent<Niwel>().GetNiwelHideStatus()){
-				targetMainChar = otherObj;
-				if(!longVision && 
-				(soldierState != SoldierState.Startled && 
-				soldierState != SoldierState.Chase && 
-				soldierState != SoldierState.Panic &&
-				soldierState != SoldierState.GrabNiwel)) SetSoldierState(SoldierState.Startled);
-			}
-		
-		}else if(otherObj.tag == Tags.MONSTER){
-			if(!longVision && (soldierState != SoldierState.Panic))	SetSoldierState(SoldierState.Panic);
-		}
-	}
-
-	public void DetectHidingPlace(GameObject hidingPlaceObj)
-	{
-		if(soldierState != SoldierState.Investigate){
-			hidingPlace.Add(hidingPlaceObj);
-		}
-	}
-
 	public void ReleaseNiwel()
 	{
 		InitStartled();
@@ -341,7 +321,7 @@ public class Soldier : MonoBehaviour {
 	void Update()
 	{
 		StateCheck();
-		CheckStateToAnim();
+		StateToAnim();
 	}
 
 	void StateCheck()
@@ -402,7 +382,7 @@ public class Soldier : MonoBehaviour {
 		}
 	}
 
-	void CheckStateToAnim()
+	void StateToAnim()
 	{
 		if(soldierState == SoldierState.Idle){
 			SetAnimation(SoldierAnimationState.Idle);

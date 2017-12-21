@@ -8,7 +8,7 @@ public class SoldierSoundTriggerCollider : MonoBehaviour {
 	void OnTriggerEnter2D(Collider2D other)
 	{
 		if(other.tag == "VisualSound"){
-			soldier.DetectObject (other.transform.parent.gameObject,false);
+//			soldier.DetectObject (other.transform.parent.gameObject,false);
 		}
 	}
 	
