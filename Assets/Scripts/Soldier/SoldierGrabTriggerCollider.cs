@@ -8,7 +8,7 @@ public class SoldierGrabTriggerCollider : MonoBehaviour {
 	{
 		print (other.name);
 		if(other.tag == Tags.MAINCHAR && soldier.soldierState == SoldierState.Chase){
-			soldier.SetSoldierState (SoldierState.GrabNiwel);
+			soldier.InitGrabNiwel();
 		}
 	}
 }
