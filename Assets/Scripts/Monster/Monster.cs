@@ -62,7 +62,7 @@ public class Monster : MonoBehaviour {
 	#region initialization
 	void Start()
 	{
-		
+		Init(false);
 	}
 
 	/// <summary>
@@ -153,9 +153,12 @@ public class Monster : MonoBehaviour {
 		}
 	}
 
-	void InitChase(GameObject target)
+	public void InitChase(GameObject target)
 	{
-		currentAttackTarget = target;
+		if(currentAttackTarget == null){
+			SetMonsterState(MonsterState.Chase);
+			currentAttackTarget = target;
+		}
 	}
 	void Chase()
 	{
@@ -167,6 +170,7 @@ public class Monster : MonoBehaviour {
 
 	void InitAttack()
 	{
+		SetMonsterState(MonsterState.Attack);
 		if(currentAttackTarget.tag == Tags.MAINCHAR){
 			//kill Niwel
 			//game over 
@@ -274,7 +278,7 @@ public class Monster : MonoBehaviour {
 
 	void MoveToNextSpot()
 	{
-		print (transform.localScale.x);
+//		print (transform.localScale.x);
 		targetObj = Instantiate(randomDestinationTargetObj) as GameObject;
 		float randomRange = 
 			transform.localScale.x < 0 ? 

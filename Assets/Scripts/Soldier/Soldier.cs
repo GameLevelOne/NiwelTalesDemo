@@ -204,7 +204,7 @@ public class Soldier : MonoBehaviour {
 		//tembak dor dor
 //		print("Dor");
 		float randomAngle = UnityEngine.Random.Range(-1*bulletRotationZ,bulletRotationZ);
-		float x = transform.localScale.x == 1f ? bulletXStartRight : bulletXStartLeft;
+		float x = transform.localScale.x == 1f ? bulletXStartLeft : bulletXStartRight;
 		Vector3 bulletPosision = new Vector3(transform.position.x+x,bulletY,0f);
 		Vector3 bulletRotation = new Vector3(0,0,randomAngle);
 

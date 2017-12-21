@@ -12,11 +12,11 @@ public class MonsterTriggerCollider : MonoBehaviour {
 
 	protected virtual void OnTriggerEnter2D(Collider2D other)
 	{
-		if(other.tag == tagCheck) monster.SetObject(other.gameObject);
+		if(other.tag == tagCheck) monster.SetObject(other.transform.parent.gameObject);
 	}
 
 	protected virtual void OnTriggerExit2D(Collider2D other)
 	{
-		if(other.tag == tagCheck) monster.SetObject(other.gameObject);
+		if(other.tag == tagCheck) monster.SetObject(other.transform.parent.gameObject);
 	}
 }
