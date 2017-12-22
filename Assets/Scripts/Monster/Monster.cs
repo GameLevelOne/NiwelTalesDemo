@@ -34,6 +34,7 @@ public class Monster : MonoBehaviour {
 	[Header("Custom Attributes")]
 	public MonsterState monsterState = MonsterState.Idle;
 	public float speed = 1.5f;
+	public float runSpeed;
 	public float monsterAppearDuration = 10f;
 	public float idleDuration = 2f;
 	public float attackDuration = 5f;
@@ -43,7 +44,7 @@ public class Monster : MonoBehaviour {
 
 	[Header("Do Not Modify")]
 	public List<GameObject> hidingPlace = new List<GameObject>();
-	[SerializeField] GameObject currentAttackTarget;
+	public GameObject currentAttackTarget;
 	[SerializeField] GameObject targetObj;
 	[SerializeField] GameObject targetSoldier;
 	[SerializeField] GameObject targetMainChar;
@@ -115,7 +116,8 @@ public class Monster : MonoBehaviour {
 	{
 		MoveToTarget(targetObj.transform);
 		if(IsArrived(targetObj.transform) && targetObj.tag == Tags.RANDOM_TARGET){
-			
+			Destroy(targetObj);
+			targetObj = null;
 			InitInvestigate();
 		}
 	}
@@ -123,9 +125,8 @@ public class Monster : MonoBehaviour {
 	void InitInvestigate()
 	{
 		SetMonsterState(MonsterState.Investigate);
-		Destroy(targetObj);
-		targetObj = null;
 		targetHidingPlace = GetNearestHidingPlace();
+
 	}
 	void Investigate()
 	{
@@ -145,11 +146,14 @@ public class Monster : MonoBehaviour {
 	{
 		SetMonsterState(MonsterState.CheckHidingPlace);
 		timer = checkHidingPlaceDuration;
+
+		if(targetMainChar != null) targetMainChar.GetComponent<Niwel> ().GrabbedFromHidingPlace ();
 	}
 	void CheckHidingPlace()
 	{
 		timer -= Time.deltaTime;
 		if(timer <= 0){
+			targetHidingPlace = null;
 			InitIdle();
 		}
 	}
@@ -164,12 +168,12 @@ public class Monster : MonoBehaviour {
 	void Chase()
 	{
 		MoveToTarget(currentAttackTarget.transform);
-		if(IsNearbyTarget(currentAttackTarget.transform)){
-			InitAttack();
-		}
+//		if(IsNearbyTarget(currentAttackTarget.transform)){
+//			InitAttack();
+//		}
 	}
 
-	void InitAttack()
+	public void InitAttack()
 	{
 		SetMonsterState(MonsterState.Attack);
 		if(currentAttackTarget.tag == Tags.MAINCHAR){
@@ -186,7 +190,11 @@ public class Monster : MonoBehaviour {
 	{
 		timer -= Time.deltaTime;
 		if(timer <= 0){
-			
+			if(currentAttackTarget == targetSoldier){
+				targetSoldier = null;
+			}else if(currentAttackTarget == targetMainChar){
+				targetMainChar = null;
+			}
 			currentAttackTarget = null;
 			InitIdle();
 		}
@@ -240,7 +248,7 @@ public class Monster : MonoBehaviour {
 	{
 		SetDirection(target);
 		Vector3 direction = transform.localScale == vLeft ? Vector3.left : Vector3.right;
-		transform.position += (direction * speed);
+		transform.position += (direction * (monsterState == MonsterState.Chase ? runSpeed : speed));
 	}
 
 	void SetDirection(Transform target)
@@ -301,25 +309,6 @@ public class Monster : MonoBehaviour {
 	#endregion
 //-------------------------------------------------------------------------------------------------------------------------------------------------
 	#region public modules
-	public void DetectObjects(GameObject otherObj)
-	{
-		if(otherObj.tag != Tags.MONSTER){
-			if(targetObj == null){
-				targetObj = otherObj;
-				SetMonsterState(MonsterState.Chase);
-			}else if(targetObj != null && targetObj.tag != Tags.SOLDIER){
-				if(targetObj.tag == Tags.RANDOM_TARGET) Destroy(targetObj);
-				targetObj = otherObj;
-				SetMonsterState(MonsterState.Chase);
-			}
-		}
-	}
-
-	public void DetectHidingPlace(GameObject hidingPlaceObj)
-	{
-		hidingPlace.Add(hidingPlaceObj);
-	}
-
 	public void FaceWall()
 	{
 		InitConfused();
@@ -332,6 +321,7 @@ public class Monster : MonoBehaviour {
 		}else if(obj.tag == Tags.SOLDIER){
 			targetSoldier = obj;
 		}else if(obj.tag == Tags.HIDEABLE){
+			
 			hidingPlace.Add(obj);
 		}else if(obj.tag == Tags.WALL){
 			wallObj = obj;
@@ -376,20 +366,29 @@ public class Monster : MonoBehaviour {
 				InitChase(targetSoldier);
 			}else if(targetMainChar != null){
 				InitChase(targetMainChar);
+			}else{
+				Idle();
 			}
-
-			Idle();
 		}else if(monsterState == MonsterState.Patrol){
 			flagMonsterTimer = true;
 			if(targetSoldier != null){
 				InitChase(targetSoldier);
+
+				Destroy(targetObj);
+				targetObj = null;
 			}else if(targetMainChar != null){
 				InitChase(targetMainChar);
+
+				Destroy(targetObj);
+				targetObj = null;
 			}else if(wallObj != null){
 				InitConfused();
-			}
 
-			Patrol();
+				Destroy(targetObj);
+				targetObj = null;
+			}else{
+				Patrol();
+			}
 		}else if(monsterState == MonsterState.Investigate){
 			flagMonsterTimer = true;
 			if(targetSoldier != null){
@@ -398,25 +397,27 @@ public class Monster : MonoBehaviour {
 				InitChase(targetMainChar);
 			}else if(wallObj != null){
 				InitConfused();
+			}else{
+				Investigate();
 			}
-
-			Investigate();
 		}else if(monsterState == MonsterState.CheckHidingPlace){
 			flagMonsterTimer = true;
 			if(targetSoldier != null){
 				InitChase(targetSoldier);
 			}else if(targetMainChar != null){
 				InitChase(targetMainChar);
+			}else{
+				CheckHidingPlace();
 			}
-
-			CheckHidingPlace();
 		}else if(monsterState == MonsterState.Chase){
 			flagMonsterTimer = false;
 			if(currentAttackTarget == targetMainChar && targetSoldier != null){
 				InitChase(targetSoldier);
+			}else{
+				Chase();
 			}
 
-			Chase();
+
 		}else if(monsterState == MonsterState.Attack){
 			flagMonsterTimer = false;
 

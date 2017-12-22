@@ -1,21 +1,19 @@
 ﻿using System.Collections;
 using UnityEngine;
 
-public class MonsterInvestigateTriggerCollider : MonoBehaviour {
-	
-	public Monster monster;
+public class MonsterInvestigateTriggerCollider : MonsterTriggerCollider {
 
-	void OnTriggerEnter2D(Collider2D other)
+	protected override void OnTriggerEnter2D(Collider2D other)
 	{
-		if(other.tag == Tags.HIDEABLE){
-			monster.DetectHidingPlace(other.gameObject);
+		if(other.tag == tagCheck) {
+//			print(other.name);
+			monster.SetObject(other.gameObject);
 		}
 	}
 
-	void OnTriggerExit2D(Collider2D other)
+	protected override void OnTriggerExit2D(Collider2D other)
 	{
-		if(other.tag == Tags.HIDEABLE){
-			if(monster.hidingPlace.Count > 0) monster.hidingPlace.Remove(other.gameObject);
-		}
+		if(other.tag == tagCheck) monster.RemoveObject(other.gameObject);
 	}
+
 }

@@ -84,8 +84,9 @@ public class Soldier : MonoBehaviour {
 	#region mechanics
 
 	#region main behaviour
-	void InitIdle()
+	public void InitIdle()
 	{
+		targetMainChar = null;
 		SetSoldierState(SoldierState.Idle);
 		timer = idleDuration;
 	}
@@ -130,7 +131,6 @@ public class Soldier : MonoBehaviour {
 	{
 		timer -= Time.deltaTime;
 		if(timer <= 0) {
-			targetMainChar = null;
 			InitIdle();
 		}
 
