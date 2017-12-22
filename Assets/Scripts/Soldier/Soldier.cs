@@ -12,7 +12,8 @@ public enum SoldierState{
 	Panic,
 	Investigate,
 	CheckHidingPlace,
-	Die
+	DieAttacked,
+	DieKetimpa
 }
 
 public enum SoldierAnimationState{
@@ -23,7 +24,8 @@ public enum SoldierAnimationState{
 	CheckHidingPlace,
 	Panic,
 	GrabNiwel,
-	Die
+	DieAttacked,
+	DieKetimpa
 }
 
 public class Soldier : MonoBehaviour {
@@ -190,9 +192,16 @@ public class Soldier : MonoBehaviour {
 		SetSoldierState(SoldierState.Panic);
 	}
 
-	public void InitDie()
+	public void InitDieAttacked()
 	{
-		SetSoldierState(SoldierState.Die);
+		SetSoldierState(SoldierState.DieAttacked);
+		thisRigidbody.simulated = false;
+		thisCollider.enabled = false;
+	}
+
+	public void InitDieKetimpa()
+	{
+		SetSoldierState(SoldierState.DieKetimpa);
 		thisRigidbody.simulated = false;
 		thisCollider.enabled = false;
 	}
@@ -381,7 +390,9 @@ public class Soldier : MonoBehaviour {
 			CheckHidingPlace();
 		}else if(soldierState == SoldierState.Panic){//--------------PANIC
 			
-		}else if(soldierState == SoldierState.Die){ //--------------DIE
+		}else if(soldierState == SoldierState.DieAttacked){ //--------------DIE
+			
+		}else if(soldierState == SoldierState.DieKetimpa){
 			
 		}
 	}
@@ -404,8 +415,10 @@ public class Soldier : MonoBehaviour {
 			SetAnimation(SoldierAnimationState.Walk);
 		}else if(soldierState == SoldierState.CheckHidingPlace){
 			SetAnimation(SoldierAnimationState.CheckHidingPlace);
-		}else if(soldierState == SoldierState.Die){
-			SetAnimation(SoldierAnimationState.Die);
+		}else if(soldierState == SoldierState.DieAttacked){
+			SetAnimation(SoldierAnimationState.DieAttacked);
+		}else if(soldierState == SoldierState.DieKetimpa){
+			SetAnimation(SoldierAnimationState.DieKetimpa);
 		}
 	}
 }
