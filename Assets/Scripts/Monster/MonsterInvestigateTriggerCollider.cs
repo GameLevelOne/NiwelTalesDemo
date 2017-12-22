@@ -6,7 +6,7 @@ public class MonsterInvestigateTriggerCollider : MonsterTriggerCollider {
 	protected override void OnTriggerEnter2D(Collider2D other)
 	{
 		if(other.tag == tagCheck) {
-			print(other.name);
+//			print(other.name);
 			monster.SetObject(other.gameObject);
 		}
 	}

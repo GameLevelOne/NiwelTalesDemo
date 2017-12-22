@@ -43,7 +43,7 @@ public class Monster : MonoBehaviour {
 
 	[Header("Do Not Modify")]
 	public List<GameObject> hidingPlace = new List<GameObject>();
-	[SerializeField] GameObject currentAttackTarget;
+	public GameObject currentAttackTarget;
 	[SerializeField] GameObject targetObj;
 	[SerializeField] GameObject targetSoldier;
 	[SerializeField] GameObject targetMainChar;
@@ -146,6 +146,7 @@ public class Monster : MonoBehaviour {
 		SetMonsterState(MonsterState.CheckHidingPlace);
 		timer = checkHidingPlaceDuration;
 
+		if(targetMainChar != null) targetMainChar.GetComponent<Niwel> ().GrabbedFromHidingPlace ();
 	}
 	void CheckHidingPlace()
 	{
@@ -166,12 +167,12 @@ public class Monster : MonoBehaviour {
 	void Chase()
 	{
 		MoveToTarget(currentAttackTarget.transform);
-		if(IsNearbyTarget(currentAttackTarget.transform)){
-			InitAttack();
-		}
+//		if(IsNearbyTarget(currentAttackTarget.transform)){
+//			InitAttack();
+//		}
 	}
 
-	void InitAttack()
+	public void InitAttack()
 	{
 		SetMonsterState(MonsterState.Attack);
 		if(currentAttackTarget.tag == Tags.MAINCHAR){
@@ -190,6 +191,8 @@ public class Monster : MonoBehaviour {
 		if(timer <= 0){
 			if(currentAttackTarget == targetSoldier){
 				targetSoldier = null;
+			}else if(currentAttackTarget == targetMainChar){
+				targetMainChar = null;
 			}
 			currentAttackTarget = null;
 			InitIdle();
