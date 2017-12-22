@@ -34,6 +34,7 @@ public class Monster : MonoBehaviour {
 	[Header("Custom Attributes")]
 	public MonsterState monsterState = MonsterState.Idle;
 	public float speed = 1.5f;
+	public float runSpeed;
 	public float monsterAppearDuration = 10f;
 	public float idleDuration = 2f;
 	public float attackDuration = 5f;
@@ -247,7 +248,7 @@ public class Monster : MonoBehaviour {
 	{
 		SetDirection(target);
 		Vector3 direction = transform.localScale == vLeft ? Vector3.left : Vector3.right;
-		transform.position += (direction * speed);
+		transform.position += (direction * (monsterState == MonsterState.Chase ? runSpeed : speed));
 	}
 
 	void SetDirection(Transform target)
