@@ -178,7 +178,7 @@ public class Monster : MonoBehaviour {
 		}else if(currentAttackTarget.tag == Tags.SOLDIER){
 			//kill Soldier
 			targetSoldier = null;
-			currentAttackTarget.GetComponent<Soldier>().InitDie();
+			currentAttackTarget.GetComponent<Soldier>().InitDieAttacked();
 		}
 		timer = attackDuration;
 	}
